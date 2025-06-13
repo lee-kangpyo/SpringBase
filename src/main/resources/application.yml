@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: springBase
+  datasource :
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true        # H2 웹 콘솔 사용 허용
+      path: /h2-console    # 콘솔 접속 경로 (기본값)
+  thymeleaf:
+    cache: false           # 템플릿 캐시 끄기 (개발용)
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.akmz.springBase.base.model
+  configuration:
+    mapUnderscoreToCamelCase: true
+jwt:
+  secret: 4JRdQC*#PCjHa7k0B?z^#vX)d30TF67p
+  expiration: 3600000 # 1시간
+#  expiration: 1 # 만료 확인
+  refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)

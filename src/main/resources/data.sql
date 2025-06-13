@@ -1,0 +1,6 @@
+
+INSERT INTO users (USER_NAME, PASSWORD, USE_YN) VALUES ('user', '$2a$12$Ju75hxXXA2D81vXxj3GWSOUf7YoliRdbX.RcNRGfEmFzz2UfDTzpa', 'Y');
+INSERT INTO users (USER_NAME, PASSWORD, USE_YN) VALUES ('admin', '$2a$12$yFszpJFFoBOOn9HgwjHGxeW4exvztGBa75x6X6wWFXnctbu0r.eiu', 'Y');
+
+INSERT INTO authorities (USER_NAME, AUTHORITY) VALUES ('user', 'ROLE_USER');
+INSERT INTO authorities (USER_NAME, AUTHORITY) VALUES ('admin', 'ROLE_ADMIN');

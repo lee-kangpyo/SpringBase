@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>커스텀 로그인 페이지</title>
+</head>
+<body>
+<h2>커스텀 로그인</h2>
+<form th:action="@{/login}" method="post">
+    <div>
+        <label>사용자명:</label>
+        <input type="text" name="username"/>
+    </div>
+    <div>
+        <label>비밀번호:</label>
+        <input type="password" name="password"/>
+    </div>
+    <div>
+        <button type="submit">로그인</button>
+    </div>
+</form>
+</body>
+</html>
