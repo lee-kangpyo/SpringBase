@@ -8,6 +8,7 @@ import com.akmz.springBase.base.model.dto.LoginRequest;
 import com.akmz.springBase.base.model.dto.TokenResponse;
 import com.akmz.springBase.base.model.entity.AuthUser;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.XSlf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;

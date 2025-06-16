@@ -1,0 +1,112 @@
+Configuration:
+  level:
+
+  status: warn
+
+  Properties:
+    Property:
+      - name: "LOG_PATH"
+        value: "./logs"
+      - name: "CONSOLE_PATTERN"
+        value: "%highlight{[%-5level]} %d{HH:mm:ss.SSS} [%thread] %logger{36}.%M:%L - %msg%n"
+      - name: "FILE_PATTERN"
+        value: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t][%F] %logger{36} - %msg%n"
+      - name: "CHARSET"
+        value: "UTF-8"
+
+  Appenders:
+    Console:
+      name: Console_Appender
+      target: SYSTEM_OUT
+      PatternLayout:
+        charset: ${CHARSET}
+        pattern: ${CONSOLE_PATTERN}
+        disableAnsi: false
+
+    RollingFile:
+      name: RollingFile_Appender
+      fileName: ${LOG_PATH}/spring-base.log
+      filePattern: "${LOG_PATH}/archive/spring-base-%d{yyyy-MM-dd}-%i.log"
+      PatternLayout:
+        charset: ${CHARSET}
+        pattern: ${FILE_PATTERN}
+      Policies:
+        TimeBasedTriggeringPolicy:
+          interval: "1"
+          modulate: true
+        SizeBasedTriggeringPolicy:
+          size: "100MB"
+      DefaultRolloverStrategy:
+        max: "7" # 보관 개수
+        # 현재는 max: "7" 만으로 파일 개수를 제한합니다.
+  Loggers:
+    # 루트 로거는 Loggers 섹션 바로 아래에 단독으로 정의됩니다.
+    Root:
+      level: INFO # Root 레벨은 INFO (운영 기본)
+      AppenderRef:
+        - ref: Console_Appender
+        - ref: RollingFile_Appender
+
+    Logger:
+      - name: com.akmz.springBase
+        additivity: false
+        level: WARN
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: com.akmz.springBase.base.mapper
+        additivity: false
+        level: WARN
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: com.akmz.springBase.mapper
+        additivity: false
+        level: WARN
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: jdbc.sqlonly
+        additivity: false
+        level: WARN # ⭐ DEBUG로 sql문을 로깅.
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: jdbc.resultsettable # 표 형태 결과 출력
+        additivity: false
+        level: WARN # ⭐ info 대신 warn으로 변경하여 표 형태 결과 출력을 끌수있음.
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: jdbc.connection # Connection 관련
+        additivity: false
+        level: WARN
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: jdbc.audit # 상세 감사 로그
+        additivity: false
+        level: WARN
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: jdbc.resultset # ResultSet 상세 처리 (getString 등)
+        additivity: false
+        level: WARN
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender
+
+      - name: jdbc.sqltiming # 쿼리 실행 시간 (있다면)
+        additivity: false
+        level: WARN # WARN으로 설정하여 불필요한 로그 끔
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: RollingFile_Appender

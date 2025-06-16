@@ -15,6 +15,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.XSlf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "인증 관련 API")
 @RequiredArgsConstructor
+@Log4j2
 public class AuthController {
 
     private final AuthService authService;
@@ -45,6 +48,7 @@ public class AuthController {
     )
     public ResponseEntity<?> login(
             @Valid @RequestBody LoginRequest request) {
+        log.info("login");
         try {
             try {
                 TokenResponse tokenResponse = authService.login(request);
