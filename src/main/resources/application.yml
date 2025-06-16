@@ -18,7 +18,7 @@ mybatis:
   configuration:
     mapUnderscoreToCamelCase: true
 jwt:
-  secret: 4JRdQC*#PCjHa7k0B?z^#vX)d30TF67p
+  secret: ${JWT_SECRET_KEY}
   expiration: 3600000 # 1시간
 #  expiration: 1 # 만료 확인
   refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)
