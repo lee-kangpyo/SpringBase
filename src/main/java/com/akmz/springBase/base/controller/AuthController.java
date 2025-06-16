@@ -3,7 +3,6 @@ package com.akmz.springBase.base.controller;
 import com.akmz.springBase.base.exception.InvalidRefreshTokenException;
 import com.akmz.springBase.base.exception.RefreshTokenMismatchException;
 import com.akmz.springBase.base.model.dto.LoginRequest;
-import com.akmz.springBase.base.model.dto.LogoutRequest;
 import com.akmz.springBase.base.model.dto.TokenResponse;
 import com.akmz.springBase.base.service.AuthService;
 import io.jsonwebtoken.JwtException;
@@ -14,13 +13,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -44,11 +46,27 @@ public class AuthController {
     public ResponseEntity<?> login(
             @Valid @RequestBody LoginRequest request) {
         try {
-            TokenResponse tokenResponse = authService.login(request);
-            return ResponseEntity.ok(TokenResponse.builder()
-                    .accessToken(tokenResponse.getAccessToken())
-                    .refreshToken(tokenResponse.getRefreshToken())
-                    .build());
+            try {
+                TokenResponse tokenResponse = authService.login(request);
+                return ResponseEntity.ok(tokenResponse); // TokenResponse 객체를 직접 반환
+            } catch (BadCredentialsException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이디 또는 비밀번호가 일치하지 않습니다.");
+            } catch (LockedException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 계정 잠김 메시지 그대로 전달
+//            } catch (UsernameNotFoundException e) { 해당 exception은 사용자 열거 공격(User Enumeration Attack)을 막기 위해 사용하지 않고 BadCredentialsException으로 합쳐서 리턴
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("존재하지 않는 사용자입니다.");
+            } catch (DisabledException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("계정이 비활성화되었습니다. 관리자에게 문의하세요.");
+            } catch (AuthenticationException e) { // 그 외 Spring Security 인증 관련 예외
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패: " + e.getMessage());
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+            }
+//            TokenResponse tokenResponse = authService.login(request);
+//            return ResponseEntity.ok(TokenResponse.builder()
+//                    .accessToken(tokenResponse.getAccessToken())
+//                    .refreshToken(tokenResponse.getRefreshToken())
+//                    .build());
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }

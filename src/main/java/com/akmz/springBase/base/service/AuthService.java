@@ -5,16 +5,18 @@ import com.akmz.springBase.base.exception.InvalidRefreshTokenException;
 import com.akmz.springBase.base.exception.RefreshTokenMismatchException;
 import com.akmz.springBase.base.mapper.AuthMapper;
 import com.akmz.springBase.base.model.dto.LoginRequest;
-import com.akmz.springBase.base.model.dto.LogoutRequest;
 import com.akmz.springBase.base.model.dto.TokenResponse;
 import com.akmz.springBase.base.model.entity.AuthUser;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,34 +33,74 @@ public class AuthService {
      * @return
      */
     public TokenResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUserName(), request.getPassword())
-        );
+        String username = request.getUserName();
+        try {
+            // Spring Security의 AuthenticationManager를 통해 인증 시도
+            // CustomUserDetailsService.loadUserByUsername()가 호출되고,
+            // 계정 잠금 여부 및 활성화 여부 등이 검증.
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, request.getPassword())
+            );
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            // 인증 성공 시: DB에 저장된 실패 횟수 초기화
+            // 성공적인 로그인 시에만 실패 횟수 초기화
+            loginSuccess(username);
 
-        String accessToken = jwtTokenProvider.createToken(userDetails.getUsername(),
-                userDetails.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority).toList());
+            // UserDetails 객체에서 사용자 정보와 권한 가져오기
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            List<String> authorities = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority).toList();
 
-        String refreshToken = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
+            // 토큰 발급
+            String accessToken = jwtTokenProvider.createToken(userDetails.getUsername(), authorities);
+            String refreshToken = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
 
-        saveRefreshToken(userDetails.getUsername(), refreshToken);
+            saveRefreshToken(userDetails.getUsername(), refreshToken);
 
-        return TokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
+            return TokenResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+        } catch (LockedException | BadCredentialsException e) {
+            // 계정 잠김, 비밀번호 불일치 시: 실패 횟수 증가 (잠긴 상태에서 시도해도 카운트 증가)
+            loginFailure(username); // 실패 횟수 증가
+            throw e;
+        // UsernameNotFoundException 은 사용자 열거 공격을 막기 위해 스프링 내부적으로 BadCredentialsException 으로 변환해서 던짐
+        } catch (UsernameNotFoundException e) { // 사용자 없음 (UsernameNotFoundException) 
+            throw e;
+        } catch (DisabledException e) { // 계정 비활성화 시 (DisabledException)
+            throw e;
+        } catch (Exception e) {
+            // 그 외 알 수 없는 예외 처리 (매우 드뭄)
+            throw new RuntimeException("알 수 없는 인증 오류 발생", e); // 일반 RuntimeException으로 래핑
+        }
+    }
+
+    @Transactional
+    public void loginSuccess(String username) {
+        authMapper.resetLoginFailureCount(username); // DB 업데이트 (실패 횟수 0으로 초기화)
+        System.out.println("Login success for user: " + username + ". Failed attempts reset.");
+    }
+
+    @Transactional
+    public void loginFailure(String username) {
+        // 사용자 존재 여부를 먼저 확인 (UserDetailsService에서 UsernameNotFoundException이 발생할 수도 있기 때문)
+        AuthUser authUser = authMapper.findByUsername(username);
+        if (authUser != null) {
+            authMapper.updateLoginFailure(username); // DB 업데이트 (실패 횟수 증가)
+            System.out.println("로그인 실패 (비밀번호 틀림) : " + username);
+        } else {
+            System.out.println("로그인 실패 (유저 정보가 존재하지 않음) : " + username);
+        }
     }
 
 
     /**
      * 로그 아웃
-     * @param accessToken 엑세스 토큰에서 id 를 추출 후 삭제
+     * @userId 해당하는 리프레쉬 토큰 삭제
      */
-    public void logout(String accessToken) {
-        String username = jwtTokenProvider.getUsername(accessToken);
-        saveRefreshToken(username, null);
+    public void logout(String userId) {
+        saveRefreshToken(userId, null);
     }
 
     /**
