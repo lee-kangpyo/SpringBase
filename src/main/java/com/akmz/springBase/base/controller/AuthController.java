@@ -13,18 +13,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.XSlf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,6 +37,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Value("${jwt.refresh-expiration}")
+    private int refreshExpiration;
+
+    @Value("${spring.profiles.active}")
+    private String MODE;
 
     @PostMapping("/login")
     @Operation(
@@ -52,7 +60,20 @@ public class AuthController {
         try {
             try {
                 TokenResponse tokenResponse = authService.login(request);
-                return ResponseEntity.ok(tokenResponse); // TokenResponse 객체를 직접 반환
+                ResponseCookie token = ResponseCookie.from("refresh_token", tokenResponse.getRefreshToken())
+                        .httpOnly(true)
+                        .secure("PROD".equals(MODE))
+                        .maxAge(refreshExpiration / 1000)
+                        .sameSite("Lax")
+                        .path("/")
+                        .build();
+
+                // 쿠키에 포함한 리프레쉬 토큰 제거
+                tokenResponse.setRefreshToken(null);
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.SET_COOKIE, token.toString())
+                        .body(tokenResponse);
             } catch (BadCredentialsException e) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이디 또는 비밀번호가 일치하지 않습니다.");
             } catch (LockedException e) {
