@@ -1,47 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.akmz.springBase.base.mapper.AuthMapper">
+
+
     <!-- 재사용할 WHERE 조건 SQL 조각 정의 -->
     <sql id="whereCondition">
         <where>
-            AND USER_NAME = #{userName}
+            AND <include refid="BASE.colUserName" /> = #{userName}
         </where>
     </sql>
     <!-- 로그인 실패 횟수와 시각을 초기화하는 SQL 조각 정의 -->
     <sql id="reSetLoginLock">
-        UPDATE users
-        SET LOGIN_FAILURE_COUNT = 0,
-        LAST_FAILURE_TIMESTAMP = NULL
+        UPDATE <include refid="BASE.userTable" />
+        SET <include refid="BASE.colLoginFailureCount" /> = 0,
+        <include refid="BASE.colLastFailureTimestamp" /> = NULL
         <include refid="whereCondition" />
     </sql>
-
+    <!-- AuthUser 엔티티의 모든 컬럼을 포함하는 SQL 조각 -->
+    <sql id="authUserColumns">
+        <include refid="BASE.colUserName"/> AS userName,
+        <include refid="BASE.colPassword"/> AS password,
+        <include refid="BASE.colRefreshToken"/> AS refreshToken,
+        <include refid="BASE.colUseYn"/> AS useYn,
+        <include refid="BASE.colLoginFailureCount"/> AS loginFailureCount,
+        <include refid="BASE.colLastFailureTimestamp"/> AS lastFailureTimestamp
+    </sql>
 
     <select id="findByUsername" resultType="com.akmz.springBase.base.model.entity.AuthUser">
             -- 유저 정보를 가져오기
-            SELECT USER_NAME, PASSWORD, REFRESH_TOKEN, USE_YN, LOGIN_FAILURE_COUNT, LAST_FAILURE_TIMESTAMP
-            FROM users
+            SELECT <include refid="authUserColumns"/>
+            FROM <include refid="BASE.userTable"/>
             <include refid="whereCondition" />
     </select>
 
     <select id="getAuthoritiesByUsername" resultType="String">
             -- 권한을 가져오기
-            SELECT AUTHORITY
-            FROM authorities
+            SELECT <include refid="BASE.colAuthority"/>
+            FROM <include refid="BASE.authorityTable"/>
             <include refid="whereCondition" />
     </select>
 
     <update id="updateRefreshToken" parameterType="com.akmz.springBase.base.model.entity.AuthUser">
         -- 리프레쉬 토큰을 DB에 저장
-        UPDATE users SET REFRESH_TOKEN = #{refreshToken}
+        UPDATE <include refid="BASE.userTable"/> SET <include refid="BASE.colRefreshToken"/> = #{refreshToken}
         <include refid="whereCondition" />
     </update>
 
 
     <update id="updateLoginFailure">
         -- 로그인 실패 시 호출: 실패 횟수 증가 및 마지막 실패 시각 업데이트
-        UPDATE users
-        SET LOGIN_FAILURE_COUNT = LOGIN_FAILURE_COUNT + 1,
-        LAST_FAILURE_TIMESTAMP = NOW()
+        UPDATE <include refid="BASE.userTable"/>
+        SET <include refid="BASE.colLoginFailureCount"/> = <include refid="BASE.colLoginFailureCount"/> + 1,
+        <include refid="BASE.colLastFailureTimestamp"/> = NOW()
         <include refid="whereCondition" />
     </update>
 

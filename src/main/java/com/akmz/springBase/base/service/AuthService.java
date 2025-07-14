@@ -8,6 +8,7 @@ import com.akmz.springBase.base.model.dto.LoginRequest;
 import com.akmz.springBase.base.model.dto.TokenResponse;
 import com.akmz.springBase.base.model.entity.AuthUser;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.XSlf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class AuthService {
 
     private final AuthenticationManager authenticationManager;
@@ -72,6 +74,7 @@ public class AuthService {
         } catch (DisabledException e) { // 계정 비활성화 시 (DisabledException)
             throw e;
         } catch (Exception e) {
+            log.error("알 수 없는 인증 오류 발생", e); // 추가할 라인
             // 그 외 알 수 없는 예외 처리 (매우 드뭄)
             throw new RuntimeException("알 수 없는 인증 오류 발생", e); // 일반 RuntimeException으로 래핑
         }
