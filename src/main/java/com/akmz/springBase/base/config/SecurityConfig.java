@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final XssFilter xssFilter;
     private final ObjectMapper objectMapper;
 
     @Bean
@@ -28,13 +29,14 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", // 스웨거
-                                "/api/auth/login", "/api/auth/token/reissue", "/css/**", "/js/**", "/h2-console/**").permitAll()
+                                "/api/auth/login", "/api/auth/token/reissue", "/api/auth/password/reset/**", "/css/**", "/js/**", "/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())  // H2 콘솔 접근 허용
                 )
                 .csrf(csrf -> csrf.disable())
+                .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         // 인증 실패 처리 (401 Unauthorized) 토큰 만료가 아닌 모든 401은 로그인 화면으로 이동

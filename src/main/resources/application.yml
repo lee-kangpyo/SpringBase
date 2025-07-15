@@ -3,9 +3,9 @@ spring:
     active: local
   application:
     name: springBase
-  datasource :
-#    url: jdbc:h2:mem:testdb
-#    driver-class-name: org.h2.Driver
+  datasource:
+    #    url: jdbc:h2:mem:testdb
+    #    driver-class-name: org.h2.Driver
     # url: jdbc:log4jdbc:mysql://localhost:3306/mydb # 예시: MySQL 데이터베이스 사용 시
     # url: jdbc:log4jdbc:oracle:thin:@localhost:1521:xe # 예시: Oracle 데이터베이스 사용 시
     url: jdbc:log4jdbc:h2:mem:testdb
@@ -14,10 +14,20 @@ spring:
     password:
   h2:
     console:
-      enabled: true        # H2 웹 콘솔 사용 허용
-      path: /h2-console    # 콘솔 접속 경로 (기본값)
+      enabled: true # H2 웹 콘솔 사용 허용
+      path: /h2-console # 콘솔 접속 경로 (기본값)
   thymeleaf:
-    cache: false           # 템플릿 캐시 끄기 (개발용)
+    cache: false # 템플릿 캐시 끄기 (개발용)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password # 또는 앱 비밀번호
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+app:
+  base-url: http://localhost:8080 # 애플리케이션 기본 URL (비밀번호 재설정 링크 생성용)
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.akmz.springBase.base.model
@@ -26,7 +36,7 @@ mybatis:
 jwt:
   secret: ${JWT_SECRET_KEY}
   expiration: 3600000 # 1시간
-#  expiration: 1 # 만료 테스트용
+  #  expiration: 1 # 만료 테스트용
   refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)
 
 logging:
