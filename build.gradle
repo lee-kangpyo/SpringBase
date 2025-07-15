@@ -28,6 +28,7 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.jsoup:jsoup:1.21.1' // Jsoup for XSS filtering
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'		// 타임리프
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -50,6 +51,7 @@ dependencies {
 	implementation 'io.github.cdimascio:java-dotenv:5.2.2'						// .env
 	implementation 'org.springframework.boot:spring-boot-starter-log4j2'		// log4j2
 	implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'		// sql 로깅용
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
 }
 

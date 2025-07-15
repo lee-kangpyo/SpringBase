@@ -18,4 +18,5 @@ public interface AuthMapper {
     void updateLoginFailure(@Param("userName") String userName); // 실패 시 카운트 증가 및 시각 업데이트
     void resetLoginFailureCount(@Param("userName") String userName); // 성공 시 카운트 초기화
     void resetLoginFailureOnUnlock(@Param("userName") String userName); // 잠금 해제 시 카운트 초기화
+    void updateUserPassword(AuthUser authUser); // 사용자 비밀번호 업데이트
 }

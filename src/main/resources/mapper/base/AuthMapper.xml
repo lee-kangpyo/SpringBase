@@ -65,4 +65,11 @@
         -- 잠금 해제 시 호출: 실패 횟수 초기화
         <include refid="reSetLoginLock" />
     </update>
+
+    <update id="updateUserPassword" parameterType="com.akmz.springBase.base.model.entity.AuthUser">
+        -- 사용자 비밀번호 업데이트
+        UPDATE <include refid="BASE.userTable"/>
+        SET <include refid="BASE.colPassword"/> = #{password}
+        <include refid="whereCondition" />
+    </update>
 </mapper>
