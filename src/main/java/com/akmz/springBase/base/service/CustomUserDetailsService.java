@@ -52,12 +52,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                 if ((currentTime - lastFailureTime) < LOCK_TIME_MILLIS) {
                     // 잠금 시간이 아직 지나지 않았다면 계정 잠김 상태로 설정
                     isAccountNonLocked = false;
-                    // 이 경우, UserDetails를 반환하면 Spring Security의 DaoAuthenticationProvider가 LockedException을 던집니다.
+                    // 이 경우, UserDetails를 반환하면 Spring Security의 DaoAuthenticationProvider가 LockedException을 throw.
                 } else {
-                    // --- 정책 2 적용: 잠금 시간이 지났더라도, DB 실패 횟수를 여기서 초기화하지 않습니다. ---
-                    // 초기화는 오직 성공적인 로그인 시 (AuthenticationSuccessHandler)에만 수행됩니다.
-                    // 따라서 계정은 잠겨있지 않은 상태이지만, 실패 횟수는 여전히 MAX_FAILED_ATTEMPTS 이상입니다.
-                    // 이 상태에서 비밀번호를 다시 틀리면 즉시 재잠금됩니다.
+                    // --- 정책 2 적용: 잠금 시간이 지났더라도, DB 실패 횟수를 여기서 초기화 X ---
+                    // 초기화는 오직 성공적인 로그인 시 (AuthenticationSuccessHandler)에만 수행
+                    // 따라서 계정은 잠겨있지 않은 상태이지만, 실패 횟수는 여전히 MAX_FAILED_ATTEMPTS 이상
+                    // 이 상태에서 비밀번호를 다시 틀리면 즉시 재잠금
                     isAccountNonLocked = true;
                 }
             }

@@ -1,6 +1,8 @@
 package com.akmz.springBase.base.controller;
 
+import com.akmz.springBase.base.exception.ExpiredResetTokenException;
 import com.akmz.springBase.base.exception.InvalidRefreshTokenException;
+import com.akmz.springBase.base.exception.InvalidResetTokenException;
 import com.akmz.springBase.base.exception.RefreshTokenMismatchException;
 import com.akmz.springBase.base.model.dto.LoginRequest;
 import com.akmz.springBase.base.model.dto.PasswordResetConfirmRequest;
@@ -16,7 +18,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -30,6 +31,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import com.akmz.springBase.base.model.dto.UserRegistrationRequest;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -101,6 +103,30 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/register")
+    @Operation(
+            summary = "회원가입 API",
+            description = "사용자 정보를 받아서 회원가입을 처리한다.",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "회원가입 성공", content = @Content(schema = @Schema(implementation = String.class))),
+                @ApiResponse(responseCode = "400", description = "잘못된 요청 - 입력값 검증 실패"),
+                @ApiResponse(responseCode = "409", description = "회원가입 실패 - 이미 존재하는 사용자")
+            }
+    )
+    public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegistrationRequest request) {
+        log.info("registerUser request: {}", request.getEmail());
+        try {
+            authService.registerUser(request);
+            return ResponseEntity.ok("회원가입이 성공적으로 완료되었습니다.");
+        } catch (com.akmz.springBase.base.exception.UserAlreadyExistsException e) { // Full qualified name for now
+            log.warn("User registration failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error during user registration: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("회원가입 중 오류가 발생했습니다.");
+        }
+    }
+
     @PostMapping("/logout")
     @Operation(
             summary = "로그아웃 API",
@@ -147,7 +173,7 @@ public class AuthController {
             description = "사용자 이메일로 비밀번호 재설정 링크를 전송한다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "비밀번호 재설정 이메일 전송 성공"),
-                    @ApiResponse(responseCode = "400", description = "잘못된 요청 - 입력값 검증 실패"),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청 - 이메일 전송 실패"),
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
                     @ApiResponse(responseCode = "500", description = "이메일 전송 실패 또는 서버 오류")
             }
@@ -155,16 +181,46 @@ public class AuthController {
     public ResponseEntity<?> requestPasswordReset(
             @Valid @RequestBody PasswordResetRequest request) {
         try {
+//            String email = authService.getEmailAddr(request.getUserId());
             authService.requestPasswordReset(request.getUserId());
             return ResponseEntity.ok("비밀번호 재설정 이메일이 전송되었습니다.");
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (MessagingException e) {
             log.error("비밀번호 재설정 이메일 전송 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("비밀번호 재설정 이메일 전송에 실패했습니다.");
+            String errorMessage = "비밀번호 재설정 이메일 전송에 실패했습니다.";
+            // 'Invalid Addresses' 메시지가 포함되어 있다면 더 구체적인 메시지 제공
+            if (e.getMessage() != null && e.getMessage().contains("Invalid Addresses")) {
+                errorMessage = "입력하신 이메일 주소가 유효하지 않거나 존재하지 않습니다. 다시 확인해주세요.";
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
         } catch (Exception e) {
             log.error("비밀번호 재설정 요청 중 오류 발생: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
+
+    @GetMapping("/validate-reset-token")
+    @Operation(
+            summary = "비밀번호 재설정 토큰 유효성 검증",
+            description = "비밀번호 재설정 페이지에 진입했을 때, URL의 토큰이 유효한지 사전에 검증한다.",
+            parameters = {
+                    @Parameter(name = "token", description = "이메일로 발송된 비밀번호 재설정 토큰", required = true)
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "토큰 유효성 검증 성공 (유효한 토큰)"),
+                    @ApiResponse(responseCode = "404", description = "유효하지 않은 토큰 (존재하지 않거나, 타입이 다르거나, 이미 사용된 토큰)", content = @Content),
+                    @ApiResponse(responseCode = "410", description = "만료된 토큰", content = @Content)
+            }
+    )
+    public ResponseEntity<?> validateResetToken(@RequestParam String token) {
+        try {
+            authService.validatePasswordResetToken(token);
+            return ResponseEntity.ok().build();
+        } catch (InvalidResetTokenException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (ExpiredResetTokenException e) {
+            return ResponseEntity.status(HttpStatus.GONE).body(e.getMessage());
         }
     }
 
@@ -185,8 +241,10 @@ public class AuthController {
         try {
             authService.resetPassword(request.getToken(), request.getNewPassword());
             return ResponseEntity.ok("비밀번호가 성공적으로 재설정되었습니다.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (InvalidResetTokenException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (ExpiredResetTokenException e) {
+            return ResponseEntity.status(HttpStatus.GONE).body(e.getMessage());
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {

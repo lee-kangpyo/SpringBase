@@ -14,9 +14,19 @@ spring:
       path: /h2-console    # 콘솔 접속 경로 (기본값)
   thymeleaf:
     cache: false           # 템플릿 캐시 끄기 (개발용)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_ID}
+    password: ${EMAIL_PW}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+app:
+  base-url: http://localhost:3000 # 애플리케이션 기본 URL (비밀번호 재설정 링크 생성용)
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
-  type-aliases-package: com.akmz.springBase.base.model
+  type-aliases-package: com.akmz.springBase
   configuration:
     mapUnderscoreToCamelCase: true
 jwt:

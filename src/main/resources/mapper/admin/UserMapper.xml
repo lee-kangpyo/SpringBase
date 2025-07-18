@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akmz.springBase.admin.mapper.UserMapper">
+
+    <!-- UserAdminViewResponse DTO에 매핑될 컬럼들을 정의하는 SQL 조각 -->
+    <sql id="userAdminViewColumns">
+        USER_NAME AS userName,
+        EMAIL AS email,
+        USE_YN AS useYn,
+        LOGIN_FAILURE_COUNT AS loginFailureCount,
+        LAST_FAILURE_TIMESTAMP AS lastFailureTimestamp
+    </sql>
+
+    <select id="findAll" resultType="UserAdminViewResponse">
+        SELECT
+            <include refid="userAdminViewColumns"/>
+        FROM
+            <include refid="BASE.userTable"/>
+    </select>
+
+</mapper>

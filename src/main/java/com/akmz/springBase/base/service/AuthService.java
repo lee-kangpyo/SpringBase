@@ -1,13 +1,16 @@
 package com.akmz.springBase.base.service;
 
 import com.akmz.springBase.base.config.JwtTokenProvider;
+import com.akmz.springBase.base.exception.ExpiredResetTokenException;
 import com.akmz.springBase.base.exception.InvalidRefreshTokenException;
+import com.akmz.springBase.base.exception.InvalidResetTokenException;
 import com.akmz.springBase.base.exception.RefreshTokenMismatchException;
 import com.akmz.springBase.base.mapper.AuthMapper;
 import com.akmz.springBase.base.mapper.AuthTokenMapper;
 import com.akmz.springBase.base.model.dto.EmailRequest;
 import com.akmz.springBase.base.model.dto.LoginRequest;
 import com.akmz.springBase.base.model.dto.TokenResponse;
+import com.akmz.springBase.base.model.dto.UserRegistrationRequest;
 import com.akmz.springBase.base.model.entity.AuthToken;
 import com.akmz.springBase.base.model.entity.AuthUser;
 import jakarta.mail.MessagingException;
@@ -96,6 +99,39 @@ public class AuthService {
         }
     }
 
+    /**
+     * 회원가입 처리
+     * @param request 회원가입 요청 DTO
+     * @throws com.akmz.springBase.base.exception.UserAlreadyExistsException 이메일 또는 사용자명이 이미 존재할 경우
+     */
+    @Transactional
+    public void registerUser(UserRegistrationRequest request) {
+        // 1. 이메일 중복 검사
+        if (authMapper.existsByEmail(request.getEmail())) {
+            throw new com.akmz.springBase.base.exception.UserAlreadyExistsException("이미 등록된 이메일입니다.");
+        }
+
+        // 2. 사용자명 중복 검사
+        if (authMapper.existsByUserName(request.getUserName())) {
+            throw new com.akmz.springBase.base.exception.UserAlreadyExistsException("이미 사용 중인 사용자명입니다.");
+        }
+
+        // 3. 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+
+        // 4. AuthUser 엔티티 생성
+        AuthUser newUser = new AuthUser();
+        newUser.setUserName(request.getUserName());
+        newUser.setEmail(request.getEmail());
+        newUser.setPassword(encodedPassword);
+        newUser.setUseYn("Y"); // 기본적으로 사용 가능으로 설정
+        newUser.setLoginFailureCount(0); // 로그인 실패 횟수 초기화
+
+        // 5. 데이터베이스 저장
+        authMapper.save(newUser);
+        log.info("새로운 사용자 등록 완료: {}", request.getEmail());
+    }
+
     @Transactional
     public void loginSuccess(String username) {
         authMapper.resetLoginFailureCount(username); // DB 업데이트 (실패 횟수 0으로 초기화)
@@ -174,18 +210,18 @@ public class AuthService {
 
     /**
      * 비밀번호 재설정 요청 처리
-     * @param email 재설정을 요청한 사용자의 이메일 (여기서는 userName)
+     * @param userId 재설정을 요청한 사용자의 이메일 (여기서는 userName)
      * @throws UsernameNotFoundException 해당 이메일로 등록된 사용자가 없을 경우
      * @throws MessagingException 이메일 전송 실패 시
      */
     @Transactional
-    public void requestPasswordReset(String email) throws MessagingException {
-        AuthUser user = authMapper.findByUsername(email);
+    public void requestPasswordReset(String userId) throws MessagingException {
+        AuthUser user = authMapper.findByUsername(userId);
         if (user == null) {
-            throw new UsernameNotFoundException("해당 이메일로 등록된 사용자가 없습니다: " + email);
+            throw new UsernameNotFoundException("해당 아이디로 등록된 사용자가 없습니다: " + userId);
         }
 
-        // 기존의 해당 타입 토큰 무효화 (선택 사항: 여러 개의 유효한 토큰을 허용할 수도 있음)
+        // 기존의 해당 타입 토큰 무효화
         authTokenMapper.invalidateOldTokens(user.getUserName(), TOKEN_TYPE_PASSWORD_RESET);
 
         String token = UUID.randomUUID().toString();
@@ -207,33 +243,71 @@ public class AuthService {
         String text = "비밀번호를 재설정하려면 다음 링크를 클릭하세요: " + resetLink + "\n\n이 링크는 30분 동안 유효합니다.";
 
         EmailRequest emailRequest = EmailRequest.builder()
-                .to(email)
+                .to(user.getEmail())
                 .subject(subject)
                 .text(text)
                 .isHtml(false)
                 .build();
 
         emailService.sendEmail(emailRequest);
-        log.info("비밀번호 재설정 이메일 전송 완료: {}", email);
+        log.info("비밀번호 재설정 이메일 전송 완료: {}", userId);
+    }
+
+    /**
+     * 비밀번호 재설정 토큰 검증
+     * @param token 검증할 비밀번호 재설정 토큰
+     * @throws com.akmz.springBase.base.exception.InvalidResetTokenException 유효하지 않은 토큰일 경우 (404 Not Found)
+     * @throws com.akmz.springBase.base.exception.ExpiredResetTokenException 만료된 토큰일 경우 (410 Gone)
+     */
+    public void validatePasswordResetToken(String token) {
+        AuthToken authToken = authTokenMapper.findByToken(token);
+
+        // 1. 토큰 존재 여부 확인
+        if (authToken == null) {
+            throw new InvalidResetTokenException("유효하지 않은 비밀번호 재설정 링크입니다.");
+        }
+
+        // 2. 토큰 타입 및 사용 여부 확인
+        if (!TOKEN_TYPE_PASSWORD_RESET.equals(authToken.getTokenType()) || authToken.isUsed()) {
+            throw new InvalidResetTokenException("유효하지 않은 비밀번호 재설정 링크입니다.");
+        }
+
+        // 3. 토큰 만료 여부 확인
+        if (authToken.getExpiryDate().before(new Date())) {
+            throw new ExpiredResetTokenException("만료된 비밀번호 재설정 링크입니다.");
+        }
     }
 
     /**
      * 비밀번호 재설정 처리
      * @param token 재설정 토큰
      * @param newPassword 새 비밀번호
-     * @throws IllegalArgumentException 유효하지 않거나 만료된 토큰일 경우
+     * @throws com.akmz.springBase.base.exception.InvalidResetTokenException 유효하지 않은 토큰일 경우
+     * @throws com.akmz.springBase.base.exception.ExpiredResetTokenException 만료된 토큰일 경우
      * @throws UsernameNotFoundException 토큰에 해당하는 사용자가 없을 경우
      */
     @Transactional
     public void resetPassword(String token, String newPassword) {
         AuthToken authToken = authTokenMapper.findByToken(token);
 
-        if (authToken == null || authToken.isUsed() || authToken.getExpiryDate().before(new Date())) {
-            throw new IllegalArgumentException("유효하지 않거나 만료된 비밀번호 재설정 링크입니다.");
+        // 1. 토큰 존재 여부 확인
+        if (authToken == null) {
+            throw new InvalidResetTokenException("유효하지 않은 비밀번호 재설정 링크입니다.");
+        }
+
+        // 2. 토큰 타입 및 사용 여부 확인
+        if (!TOKEN_TYPE_PASSWORD_RESET.equals(authToken.getTokenType()) || authToken.isUsed()) {
+            throw new InvalidResetTokenException("유효하지 않은 비밀번호 재설정 링크입니다.");
+        }
+
+        // 3. 토큰 만료 여부 확인
+        if (authToken.getExpiryDate().before(new Date())) {
+            throw new ExpiredResetTokenException("만료된 비밀번호 재설정 링크입니다.");
         }
 
         AuthUser user = authMapper.findByUsername(authToken.getUserName());
         if (user == null) {
+            // 이 경우는 거의 발생하지 않아야 하지만, 방어적으로 코딩
             throw new UsernameNotFoundException("토큰에 해당하는 사용자를 찾을 수 없습니다.");
         }
 
@@ -246,5 +320,16 @@ public class AuthService {
 
         log.info("비밀번호 재설정 완료: {}", user.getUserName());
     }
+
+    /**
+     * 유저 아이디로 이메일 주소 가져오기
+     * @param userId
+     * @return
+     */
+    public String getEmailAddr(String userId) {
+        return authMapper.getEmailAddr(userId);
+    }
+
+
 }
 

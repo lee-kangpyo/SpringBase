@@ -4,16 +4,10 @@
 
     <!-- 테이블 이름 정의 -->
     <sql id="userTable">users</sql>
+    <sql id="emailTable">users</sql>
     <sql id="authorityTable">authorities</sql>
 
-    <!-- 컬럼 이름 정의 -->
-    <sql id="colUserName">USER_NAME</sql>
-    <sql id="colPassword">PASSWORD</sql>
-    <sql id="colRefreshToken">REFRESH_TOKEN</sql>
-    <sql id="colUseYn">USE_YN</sql>
-    <sql id="colLoginFailureCount">LOGIN_FAILURE_COUNT</sql>
-    <sql id="colLastFailureTimestamp">LAST_FAILURE_TIMESTAMP</sql>
-    <sql id="colAuthority">AUTHORITY</sql>
-
+    <!-- AuthToken 테이블 -->
+    <sql id="authTokenTable">auth_tokens</sql>
 
 </mapper>

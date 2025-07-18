@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,13 +29,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", // 스웨거
-                                "/api/auth/login", "/api/auth/token/reissue", "/api/auth/password/reset/**", "/css/**", "/js/**", "/h2-console/**").permitAll()
+                                "/api/auth/validate-reset-token", "/api/auth/token/reissue", "/api/auth/password/reset/**",  // 비밀번호 재설정
+                                "/api/auth/login", "/api/auth/register", "/css/**", "/js/**", "/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())  // H2 콘솔 접근 허용
                 )
+                .cors(cors -> {}) // WebConfig에서 정의된 CORS 설정을 사용하도록 Spring Security에 알림
                 .csrf(csrf -> csrf.disable())
                 .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -50,6 +54,9 @@ public class SecurityConfig {
                             if ("TOKEN_EXPIRED".equals(exception)) {
                                 problemDetail.setTitle("Expired Token");
                                 problemDetail.setDetail("엑세스 토큰이 만료되었습니다. 토큰을 refresh 하세요.");
+                            } else if (authException instanceof LockedException) {
+                                problemDetail.setTitle("Account Locked");
+                                problemDetail.setDetail("계정이 잠겼있습니다. 관리자에게 문의하세요.");
                             } else {
                                 problemDetail.setTitle("Unauthorized");
                                 problemDetail.setDetail("인증에 실패했습니다. 자격 증명이 잘못되었거나 없습니다.");

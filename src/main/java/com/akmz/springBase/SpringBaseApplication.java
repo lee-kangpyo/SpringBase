@@ -6,7 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan(basePackages = {"com.akmz.springBase.base.mapper", "com.akmz.springBase.mapper"})
+@MapperScan(basePackages = "com.akmz.springBase")
 public class SpringBaseApplication {
 
 	public static void main(String[] args) {

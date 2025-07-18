@@ -3,7 +3,7 @@
 <mapper namespace="com.akmz.springBase.base.mapper.AuthTokenMapper">
 
     <insert id="insertAuthToken" parameterType="com.akmz.springBase.base.model.entity.AuthToken">
-        INSERT INTO auth_tokens (TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED)
+        INSERT INTO <include refid="BASE.authTokenTable"/> (TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED)
         VALUES (#{token}, #{userName}, #{tokenType}, #{expiryDate}, #{createdDate}, #{used})
     </insert>
 
@@ -11,14 +11,14 @@
         SELECT
             ID, TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED
         FROM
-            auth_tokens
+            <include refid="BASE.authTokenTable"/>
         WHERE
             TOKEN = #{token}
     </select>
 
     <update id="updateAuthTokenUsed" parameterType="string">
         UPDATE
-            auth_tokens
+            <include refid="BASE.authTokenTable"/>
         SET
             USED = TRUE
         WHERE
@@ -27,7 +27,7 @@
 
     <update id="invalidateOldTokens">
         UPDATE
-            auth_tokens
+            <include refid="BASE.authTokenTable"/>
         SET
             USED = TRUE
         WHERE
@@ -41,7 +41,7 @@
         SELECT
             ID, TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED
         FROM
-            auth_tokens
+            <include refid="BASE.authTokenTable"/>
         WHERE
             USER_NAME = #{userName}
             AND TOKEN_TYPE = #{tokenType}

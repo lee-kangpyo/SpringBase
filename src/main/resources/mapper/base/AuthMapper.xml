@@ -6,27 +6,28 @@
     <!-- 재사용할 WHERE 조건 SQL 조각 정의 -->
     <sql id="whereCondition">
         <where>
-            AND <include refid="BASE.colUserName" /> = #{userName}
+            AND USER_NAME = #{userName}
         </where>
     </sql>
     <!-- 로그인 실패 횟수와 시각을 초기화하는 SQL 조각 정의 -->
     <sql id="reSetLoginLock">
         UPDATE <include refid="BASE.userTable" />
-        SET <include refid="BASE.colLoginFailureCount" /> = 0,
-        <include refid="BASE.colLastFailureTimestamp" /> = NULL
+        SET LOGIN_FAILURE_COUNT = 0,
+        LAST_FAILURE_TIMESTAMP = NULL
         <include refid="whereCondition" />
     </sql>
     <!-- AuthUser 엔티티의 모든 컬럼을 포함하는 SQL 조각 -->
     <sql id="authUserColumns">
-        <include refid="BASE.colUserName"/> AS userName,
-        <include refid="BASE.colPassword"/> AS password,
-        <include refid="BASE.colRefreshToken"/> AS refreshToken,
-        <include refid="BASE.colUseYn"/> AS useYn,
-        <include refid="BASE.colLoginFailureCount"/> AS loginFailureCount,
-        <include refid="BASE.colLastFailureTimestamp"/> AS lastFailureTimestamp
+        USER_NAME AS userName,
+        PASSWORD AS password,
+        EMAIL AS email, <!-- EMAIL 컬럼 추가 -->
+        REFRESH_TOKEN AS refreshToken,
+        USE_YN AS useYn,
+        LOGIN_FAILURE_COUNT AS loginFailureCount,
+        LAST_FAILURE_TIMESTAMP AS lastFailureTimestamp
     </sql>
 
-    <select id="findByUsername" resultType="com.akmz.springBase.base.model.entity.AuthUser">
+    <select id="findByUsername" resultType="AuthUser">
             -- 유저 정보를 가져오기
             SELECT <include refid="authUserColumns"/>
             FROM <include refid="BASE.userTable"/>
@@ -35,14 +36,19 @@
 
     <select id="getAuthoritiesByUsername" resultType="String">
             -- 권한을 가져오기
-            SELECT <include refid="BASE.colAuthority"/>
+            SELECT AUTHORITY
             FROM <include refid="BASE.authorityTable"/>
             <include refid="whereCondition" />
     </select>
+    <select id="getEmailAddr" resultType="java.lang.String">
+        SELECT EMAIL
+        FROM <include refid="BASE.emailTable" />
+        WHERE USER_NAME = #{userId}
+    </select>
 
-    <update id="updateRefreshToken" parameterType="com.akmz.springBase.base.model.entity.AuthUser">
+    <update id="updateRefreshToken" parameterType="AuthUser">
         -- 리프레쉬 토큰을 DB에 저장
-        UPDATE <include refid="BASE.userTable"/> SET <include refid="BASE.colRefreshToken"/> = #{refreshToken}
+        UPDATE <include refid="BASE.userTable"/> SET REFRESH_TOKEN = #{refreshToken}
         <include refid="whereCondition" />
     </update>
 
@@ -50,8 +56,8 @@
     <update id="updateLoginFailure">
         -- 로그인 실패 시 호출: 실패 횟수 증가 및 마지막 실패 시각 업데이트
         UPDATE <include refid="BASE.userTable"/>
-        SET <include refid="BASE.colLoginFailureCount"/> = <include refid="BASE.colLoginFailureCount"/> + 1,
-        <include refid="BASE.colLastFailureTimestamp"/> = NOW()
+        SET LOGIN_FAILURE_COUNT = LOGIN_FAILURE_COUNT + 1,
+        LAST_FAILURE_TIMESTAMP = NOW()
         <include refid="whereCondition" />
     </update>
 
@@ -66,10 +72,39 @@
         <include refid="reSetLoginLock" />
     </update>
 
-    <update id="updateUserPassword" parameterType="com.akmz.springBase.base.model.entity.AuthUser">
+    <update id="updateUserPassword" parameterType="AuthUser">
         -- 사용자 비밀번호 업데이트
         UPDATE <include refid="BASE.userTable"/>
-        SET <include refid="BASE.colPassword"/> = #{password}
+        SET PASSWORD = #{password}
         <include refid="whereCondition" />
     </update>
+
+    <!-- 회원가입 관련 쿼리 -->
+    <select id="existsByEmail" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM <include refid="BASE.userTable"/>
+        WHERE EMAIL = #{email}
+    </select>
+
+    <select id="existsByUserName" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM <include refid="BASE.userTable"/>
+        WHERE USER_NAME = #{userName}
+    </select>
+
+    <insert id="save" parameterType="AuthUser">
+        INSERT INTO <include refid="BASE.userTable"/> (
+            USER_NAME,
+            PASSWORD,
+            EMAIL,
+            USE_YN,
+            LOGIN_FAILURE_COUNT
+        ) VALUES (
+            #{userName},
+            #{password},
+            #{email},
+            'Y', -- 기본값으로 'Y' 설정
+            0    -- 기본값으로 0 설정
+        )
+    </insert>
 </mapper>

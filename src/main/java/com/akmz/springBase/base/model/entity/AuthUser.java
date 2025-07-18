@@ -8,6 +8,7 @@ import java.util.Date;
 public class AuthUser {
     private String userName;
     private String password;
+    private String email; // 이메일 필드 추가
     private String refreshToken;
     private String role;
     private String useYn;
