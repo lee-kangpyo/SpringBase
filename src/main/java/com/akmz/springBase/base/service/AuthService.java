@@ -202,10 +202,16 @@ public class AuthService {
      * @param refreshToken 리프레쉬 토큰
      */
     private void saveRefreshToken(String username, String refreshToken) {
-        AuthUser authUser = new AuthUser();
-        authUser.setUserName(username);
-        authUser.setRefreshToken(refreshToken);
-        authMapper.updateRefreshToken(authUser);
+        log.debug("Attempting to save refresh token for user: {}", username);
+        AuthUser authUser = authMapper.findByUsername(username);
+        if (authUser != null) {
+            log.debug("Found user {}. Updating refresh token.", username);
+            authUser.setRefreshToken(refreshToken);
+            authMapper.updateRefreshToken(authUser);
+            log.info("Refresh token updated for user {}: {}", username, refreshToken);
+        } else {
+            log.warn("사용자를 찾을 수 없습니다: {}", username);
+        }
     }
 
     /**

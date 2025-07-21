@@ -110,7 +110,7 @@ class PasswordResetIntegrationTest {
 
         // then: 404 Not Found 응답 확인
         result.andExpect(status().isNotFound())
-                .andExpect(content().string("해당 이메일로 등록된 사용자가 없습니다: nonexistentUser"));
+                .andExpect(content().string("해당 아이디로 등록된 사용자가 없습니다: nonexistentUser"));
     }
 
     @Test
@@ -168,9 +168,9 @@ class PasswordResetIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
-        // then: 401 Unauthorized 응답 확인
-        result.andExpect(status().isUnauthorized())
-                .andExpect(content().string("유효하지 않거나 만료된 비밀번호 재설정 링크입니다."));
+        // then: 404 Not Found 응답 확인
+        result.andExpect(status().isNotFound())
+                .andExpect(content().string("유효하지 않은 비밀번호 재설정 링크입니다."));
     }
 
     @Test
@@ -201,9 +201,9 @@ class PasswordResetIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
-        // then: 401 Unauthorized 응답 확인
-        result.andExpect(status().isUnauthorized())
-                .andExpect(content().string("유효하지 않거나 만료된 비밀번호 재설정 링크입니다."));
+        // then: 410 Gone 응답 확인
+        result.andExpect(status().isGone())
+                .andExpect(content().string("만료된 비밀번호 재설정 링크입니다."));
     }
 
     @Test
@@ -234,8 +234,8 @@ class PasswordResetIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
-        // then: 401 Unauthorized 응답 확인
-        result.andExpect(status().isUnauthorized())
-                .andExpect(content().string("유효하지 않거나 만료된 비밀번호 재설정 링크입니다."));
+        // then: 404 Not Found 응답 확인
+        result.andExpect(status().isNotFound())
+                .andExpect(content().string("유효하지 않은 비밀번호 재설정 링크입니다."));
     }
 }

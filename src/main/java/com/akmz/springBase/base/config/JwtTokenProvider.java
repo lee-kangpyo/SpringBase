@@ -41,11 +41,14 @@ public class JwtTokenProvider {
 
     // 리프레시 토큰 생성
     public String createRefreshToken(String username) {
+        Claims claims = Jwts.claims().setSubject(username);
+        claims.put("uuid", java.util.UUID.randomUUID().toString()); // 고유한 UUID 추가
+
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshExpiration);
 
         return Jwts.builder()
-                .setSubject(username)
+                .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()), algorithm)

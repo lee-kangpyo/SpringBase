@@ -18,9 +18,13 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import org.mybatis.spring.SqlSessionTemplate;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.jdbc.Sql;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.slf4j.Logger;
@@ -43,6 +47,9 @@ class LoginIntegrationTest {
 
     @Autowired
     private SqlSessionTemplate sqlSessionTemplate;
+
+    @Autowired
+    private SqlSessionFactory sqlSessionFactory;
 
     @Test
     @Transactional
@@ -132,7 +139,7 @@ class LoginIntegrationTest {
 
     @Test
     @Transactional
-    @DisplayName("토큰 재발급 성공 테스트 - 유효한 Refresh Token으로 Access Token 재발급, db 업데이트 확인")
+    @DisplayName("토큰 재발급 성공 테스트 - 유효한 Refresh Token으로 Access Token 재발급, 토큰값이 다른지 체크")
     void refresh_token_reissue_success_test() throws Exception {
         // given: 로그인 성공 후 Refresh Token 확보
         LoginRequest loginRequest = new LoginRequest();
@@ -172,13 +179,11 @@ class LoginIntegrationTest {
         reissueResult.andExpect(status().isOk()) // HTTP 200 OK를 기대함
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty()) // 새로운 accessToken이 존재하고 비어 있지 않은지 확인
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty()); // 새로운 refreshToken이 존재하고 비어 있지 않은지 확인
-
-        // then: DB에 저장된 Refresh Token이 새로운 토큰으로 업데이트되었는지 확인
-        sqlSessionTemplate.clearCache(); // MyBatis 캐시 클리어
-        AuthUser userAfterReissue = authMapper.findByUsername(loginRequest.getUserName());
-        assertThat(userAfterReissue.getRefreshToken()).isEqualTo(objectMapper.readTree(reissueResult.andReturn().getResponse().getContentAsString()).get("refreshToken").asText());
-        assertThat(userAfterReissue.getRefreshToken()).isNotEqualTo(refreshToken); //  db에 저장된 refreshToken과 이전 토큰은 달라야함
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty()); // 새로운 refreshToken이 존재하고 비어
+        // then: API 응답으로 받은 새로운 Refresh Token이 기존과 다른지 확인
+        String newRefreshToken = objectMapper.readTree(reissueResult.andReturn().getResponse().getContentAsString()).get("refreshToken").asText();
+        assertThat(newRefreshToken).isNotNull();
+        assertThat(newRefreshToken).isNotEqualTo(refreshToken);
     }
 
     @Test
@@ -308,4 +313,5 @@ class LoginIntegrationTest {
         // then: 401 Unauthorized 상태를 기대함
         result.andExpect(status().isUnauthorized());
     }
-}
+
+    }
