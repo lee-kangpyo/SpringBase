@@ -66,14 +66,13 @@ public class AuthController {
         try {
             try {
                 TokenResponse tokenResponse = authService.login(request);
-                ResponseCookie token = ResponseCookie.from("refresh_token", tokenResponse.getRefreshToken())
+                ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
                         .httpOnly(true)
                         .secure("PROD".equals(MODE))
                         .maxAge(refreshExpiration / 1000)
                         .sameSite("Lax")
                         .path("/")
                         .build();
-
                 // 쿠키에 포함한 리프레쉬 토큰 제거
                 tokenResponse.setRefreshToken(null);
 
@@ -151,13 +150,23 @@ public class AuthController {
             }
     )
     public ResponseEntity<?> refreshAccessToken(
-            @RequestHeader(value = "X-Refresh-Token", required = true)
-            @Parameter(description = "Refresh Token", required = true)
+            @CookieValue(value = "X-Refresh-Token", required = true)
             String refreshToken
     ) {
         try {
             TokenResponse tokenResponse = authService.refreshAccessToken(refreshToken);
-            return ResponseEntity.ok(tokenResponse);
+            ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
+                    .httpOnly(true)
+                    .secure("PROD".equals(MODE))
+                    .maxAge(refreshExpiration / 1000)
+                    .sameSite("Lax")
+                    .path("/")
+                    .build();
+            // 쿠키에 포함한 리프레쉬 토큰 제거
+            tokenResponse.setRefreshToken(null);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, token.toString())
+                    .body(tokenResponse);
         } catch (InvalidRefreshTokenException | JwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 리프레시 토큰입니다.");
         } catch (RefreshTokenMismatchException e) {

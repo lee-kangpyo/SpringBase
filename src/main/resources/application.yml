@@ -39,5 +39,12 @@ jwt:
   #  expiration: 1 # 만료 테스트용
   refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)
 
+ftp:
+  host: ${FTP_HOST}
+  port: ${FTP_PORT}
+  username: ${FTP_USERNAME}
+  password: ${FTP_PASSWORD}
+  remote-base-dir: ${FTP_REMOTE_BASE_DIR:/} # 기본값은 /
+
 logging:
   config: classpath:config/log/log4j2.yml
