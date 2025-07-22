@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
@@ -25,6 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class FtpServiceTest {
 
     @InjectMocks
@@ -35,8 +37,6 @@ class FtpServiceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // MockitoAnnotations.openMocks(this); // @ExtendWith(MockitoExtension.class) 사용 시 필요 없음
-
         // @Value 필드 주입 (ReflectionTestUtils 사용)
         ReflectionTestUtils.setField(ftpService, "host", "localhost");
         ReflectionTestUtils.setField(ftpService, "port", 21);
@@ -48,31 +48,34 @@ class FtpServiceTest {
         ReflectionTestUtils.setField(ftpService, "ftpClient", mockFtpClient);
 
         // connectAndLogin 내부에서 호출되는 메서드 Mocking
-        doNothing().when(mockFtpClient).connect(anyString(), anyInt()); // void 메서드이므로 doNothing() 사용
-        when(mockFtpClient.getReplyCode()).thenReturn(FTPReply.COMMAND_OK); // 200 OK
+        doNothing().when(mockFtpClient).connect(anyString(), anyInt());
+        when(mockFtpClient.getReplyCode()).thenReturn(FTPReply.COMMAND_OK);
         when(mockFtpClient.login(anyString(), anyString())).thenReturn(true);
         doNothing().when(mockFtpClient).enterLocalPassiveMode();
-        when(mockFtpClient.setFileType(anyInt())).thenReturn(true); // setFileType은 boolean을 반환하므로 thenReturn(true) 사용
-        when(mockFtpClient.changeWorkingDirectory(anyString())).thenReturn(true); // 디렉토리 변경 성공 가정
-        when(mockFtpClient.isConnected()).thenReturn(true); // 연결되어 있다고 가정하여 logout/disconnect 호출 가능하게 함
+        when(mockFtpClient.setFileType(anyInt())).thenReturn(true);
+        when(mockFtpClient.changeWorkingDirectory(anyString())).thenReturn(true);
+        when(mockFtpClient.isConnected()).thenReturn(true);
     }
 
     @Test
     @DisplayName("파일 업로드 성공 테스트")
     void uploadFile_success() throws IOException {
         // Given
-        InputStream testInputStream = new ByteArrayInputStream("test data".getBytes());
-        String remoteFileName = "test_upload.txt";
-        when(mockFtpClient.storeFile(eq(remoteFileName), any(InputStream.class))).thenReturn(true);
+        String testContent = "test data";
+        MockMultipartFile mockFile = new MockMultipartFile("file", "test_upload.txt", "text/plain", testContent.getBytes());
+        String remotePath = "/temp_uploads/test_upload.txt"; // 전체 경로로 변경
+
+        // Mock MultipartFile의 getInputStream()은 실제 구현을 사용하므로 Mocking 필요 없음
+        when(mockFtpClient.storeFile(eq(remotePath), any(InputStream.class))).thenReturn(true);
 
         // When
-        boolean result = ftpService.uploadFile(testInputStream, remoteFileName);
+        boolean result = ftpService.uploadFile(mockFile, remotePath);
 
         // Then
         assertTrue(result);
         verify(mockFtpClient, times(1)).connect(anyString(), anyInt());
         verify(mockFtpClient, times(1)).login(anyString(), anyString());
-        verify(mockFtpClient, times(1)).storeFile(eq(remoteFileName), any(InputStream.class));
+        verify(mockFtpClient, times(1)).storeFile(eq(remotePath), any(InputStream.class));
         verify(mockFtpClient, times(1)).logout();
         verify(mockFtpClient, times(1)).disconnect();
     }
@@ -81,17 +84,20 @@ class FtpServiceTest {
     @DisplayName("파일 업로드 실패 테스트 - storeFile 실패")
     void uploadFile_fail_storeFile() throws IOException {
         // Given
-        InputStream testInputStream = new ByteArrayInputStream("test data".getBytes());
-        String remoteFileName = "test_upload_fail.txt";
-        when(mockFtpClient.storeFile(eq(remoteFileName), any(InputStream.class))).thenReturn(false);
+        String testContent = "test data";
+        MockMultipartFile mockFile = new MockMultipartFile("file", "test_upload_fail.txt", "text/plain", testContent.getBytes());
+        String remotePath = "/temp_uploads/test_upload_fail.txt"; // 전체 경로로 변경
+
+        // Mock MultipartFile의 getInputStream()은 실제 구현을 사용하므로 Mocking 필요 없음
+        when(mockFtpClient.storeFile(eq(remotePath), any(InputStream.class))).thenReturn(false);
         when(mockFtpClient.getReplyString()).thenReturn("550 File not found"); // 실패 응답 설정
 
         // When
-        boolean result = ftpService.uploadFile(testInputStream, remoteFileName);
+        boolean result = ftpService.uploadFile(mockFile, remotePath);
 
         // Then
         assertFalse(result);
-        verify(mockFtpClient, times(1)).storeFile(eq(remoteFileName), any(InputStream.class));
+        verify(mockFtpClient, times(1)).storeFile(eq(remotePath), any(InputStream.class));
     }
 
     @Test
@@ -100,16 +106,17 @@ class FtpServiceTest {
         // Given
         OutputStream testOutputStream = new ByteArrayOutputStream();
         String remoteFileName = "test_download.txt";
-        when(mockFtpClient.retrieveFile(eq(remoteFileName), any(OutputStream.class))).thenReturn(true);
+        String remotePath = "/temp_uploads/test_download.txt"; // 전체 경로로 변경
+        when(mockFtpClient.retrieveFile(eq(remotePath), any(OutputStream.class))).thenReturn(true);
 
         // When
-        boolean result = ftpService.downloadFile(remoteFileName, testOutputStream);
+        boolean result = ftpService.downloadFile(remotePath, testOutputStream);
 
         // Then
         assertTrue(result);
         verify(mockFtpClient, times(1)).connect(anyString(), anyInt());
         verify(mockFtpClient, times(1)).login(anyString(), anyString());
-        verify(mockFtpClient, times(1)).retrieveFile(eq(remoteFileName), any(OutputStream.class));
+        verify(mockFtpClient, times(1)).retrieveFile(eq(remotePath), any(OutputStream.class));
         verify(mockFtpClient, times(1)).logout();
         verify(mockFtpClient, times(1)).disconnect();
     }
@@ -120,15 +127,16 @@ class FtpServiceTest {
         // Given
         OutputStream testOutputStream = new ByteArrayOutputStream();
         String remoteFileName = "test_download_fail.txt";
-        when(mockFtpClient.retrieveFile(eq(remoteFileName), any(OutputStream.class))).thenReturn(false);
+        String remotePath = "/temp_uploads/test_download_fail.txt"; // 전체 경로로 변경
+        when(mockFtpClient.retrieveFile(eq(remotePath), any(OutputStream.class))).thenReturn(false);
         when(mockFtpClient.getReplyString()).thenReturn("550 File not found"); // 실패 응답 설정
 
         // When
-        boolean result = ftpService.downloadFile(remoteFileName, testOutputStream);
+        boolean result = ftpService.downloadFile(remotePath, testOutputStream);
 
         // Then
         assertFalse(result);
-        verify(mockFtpClient, times(1)).retrieveFile(eq(remoteFileName), any(OutputStream.class));
+        verify(mockFtpClient, times(1)).retrieveFile(eq(remotePath), any(OutputStream.class));
     }
 
     @Test
@@ -136,15 +144,17 @@ class FtpServiceTest {
     @MockitoSettings(strictness = Strictness.LENIENT)
     void connect_fail() throws IOException {
         // Given
+        MockMultipartFile mockFile = new MockMultipartFile("file", "test.txt", "text/plain", "data".getBytes());
+        String remotePath = "/temp_uploads/file.txt"; // 전체 경로로 변경
         doThrow(new IOException("Connection refused")).when(mockFtpClient).connect(anyString(), anyInt());
-        when(mockFtpClient.isConnected()).thenReturn(false); // 연결 실패 시 isConnected는 false
+        when(mockFtpClient.isConnected()).thenReturn(false);
 
         // When
-        boolean result = ftpService.uploadFile(new ByteArrayInputStream("data".getBytes()), "file.txt");
+        boolean result = ftpService.uploadFile(mockFile, remotePath);
 
         // Then
         assertFalse(result);
-        verify(mockFtpClient, never()).login(anyString(), anyString()); // 연결 실패했으므로 로그인 시도 안 함
+        verify(mockFtpClient, never()).login(anyString(), anyString());
     }
 
     @Test
@@ -152,16 +162,18 @@ class FtpServiceTest {
     @MockitoSettings(strictness = Strictness.LENIENT)
     void login_fail() throws IOException {
         // Given
+        MockMultipartFile mockFile = new MockMultipartFile("file", "test.txt", "text/plain", "data".getBytes());
+        String remotePath = "/temp_uploads/file.txt"; // 전체 경로로 변경
         when(mockFtpClient.getReplyCode()).thenReturn(FTPReply.COMMAND_OK);
-        when(mockFtpClient.login(anyString(), anyString())).thenReturn(false); // 로그인 실패 가정
-        when(mockFtpClient.isConnected()).thenReturn(false); // 로그인 실패 시 isConnected는 false
+        when(mockFtpClient.login(anyString(), anyString())).thenReturn(false);
+        when(mockFtpClient.isConnected()).thenReturn(false);
 
         // When
-        boolean result = ftpService.uploadFile(new ByteArrayInputStream("data".getBytes()), "file.txt");
+        boolean result = ftpService.uploadFile(mockFile, remotePath);
 
         // Then
         assertFalse(result);
         verify(mockFtpClient, times(1)).login(anyString(), anyString());
-        verify(mockFtpClient, times(1)).disconnect(); // 로그인 실패 후 disconnect 호출
+        verify(mockFtpClient, times(1)).disconnect();
     }
 }
