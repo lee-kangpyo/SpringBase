@@ -12,6 +12,9 @@ import lombok.Data;
 @Schema(description = "토큰 응답 객체")
 public class TokenResponse {
 
+    @Schema(description = "유저이름")
+    private String userName;
+
     @Schema(description = "엑세스토큰")
     private String accessToken;
 

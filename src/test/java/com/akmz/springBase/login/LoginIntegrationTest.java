@@ -5,6 +5,7 @@ import com.akmz.springBase.base.model.entity.AuthUser;
 import com.akmz.springBase.base.test.DotenvContextInitializer;
 import com.akmz.springBase.base.mapper.AuthMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,34 +153,21 @@ class LoginIntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        // 로그인 응답에서 Refresh Token 추출 (Set-Cookie 헤더에서)
-        String setCookieHeader = loginResult.getResponse().getHeader("Set-Cookie");
-        String refreshToken = null;
-        if (setCookieHeader != null) {
-            // "refresh_token=" 다음부터 첫 번째 세미콜론(;) 전까지의 문자열 추출
-            int startIndex = setCookieHeader.indexOf("refresh_token=");
-            if (startIndex != -1) {
-                startIndex += "refresh_token=".length();
-                int endIndex = setCookieHeader.indexOf(";", startIndex);
-                if (endIndex != -1) {
-                    refreshToken = setCookieHeader.substring(startIndex, endIndex);
-                } else {
-                    // 세미콜론이 없는 경우 (마지막 쿠키일 경우)
-                    refreshToken = setCookieHeader.substring(startIndex);
-                }
-            }
-        }
+        // 로그인 응답에서 Refresh Token 추출 (쿠키에서 직접 가져옴)
+        Cookie refreshTokenCookie = loginResult.getResponse().getCookie("X-Refresh-Token");
+        assertThat(refreshTokenCookie).isNotNull(); // 쿠키가 null이 아닌지 확인
+        String refreshToken = refreshTokenCookie.getValue();
+        log.info("Extracted Refresh Token from cookie: {}", refreshToken); // 추출된 토큰 값 로깅
 
         // when: 확보한 Refresh Token으로 재발급 요청 수행
         ResultActions reissueResult = mockMvc.perform(post("/api/auth/token/reissue")
-                .header("X-Refresh-Token", refreshToken) // X-Refresh-Token 헤더에 Refresh Token 포함
+                .cookie(refreshTokenCookie) // 추출된 Cookie 객체를 직접 사용
                 .contentType(MediaType.APPLICATION_JSON));
 
         // then: 재발급 성공 검증
         reissueResult.andExpect(status().isOk()) // HTTP 200 OK를 기대함
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.accessToken").isNotEmpty()) // 새로운 accessToken이 존재하고 비어 있지 않은지 확인
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty()); // 새로운 refreshToken이 존재하고 비어
+                .andExpect(jsonPath("$.accessToken").isNotEmpty()); // 새로운 accessToken이 존재하고 비어 있지 않은지 확인
         // then: API 응답으로 받은 새로운 Refresh Token이 기존과 다른지 확인
         String newRefreshToken = objectMapper.readTree(reissueResult.andReturn().getResponse().getContentAsString()).get("refreshToken").asText();
         assertThat(newRefreshToken).isNotNull();
@@ -195,7 +183,7 @@ class LoginIntegrationTest {
 
         // when: 유효하지 않은 Refresh Token으로 재발급 요청 수행
         ResultActions reissueResult = mockMvc.perform(post("/api/auth/token/reissue")
-                .header("X-Refresh-Token", invalidRefreshToken) // X-Refresh-Token 헤더에 유효하지 않은 토큰 포함
+                .cookie(new Cookie("X-Refresh-Token", invalidRefreshToken)) // X-Refresh-Token 쿠키에 포함
                 .contentType(MediaType.APPLICATION_JSON));
 
         // then: 401 Unauthorized 상태와 예상 메시지 검증

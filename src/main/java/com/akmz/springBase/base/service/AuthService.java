@@ -80,6 +80,7 @@ public class AuthService {
             saveRefreshToken(userDetails.getUsername(), refreshToken);
 
             return TokenResponse.builder()
+                    .userName(userDetails.getUsername())
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .build();

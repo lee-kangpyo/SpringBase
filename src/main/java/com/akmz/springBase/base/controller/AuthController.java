@@ -74,7 +74,7 @@ public class AuthController {
                         .path("/")
                         .build();
                 // 쿠키에 포함한 리프레쉬 토큰 제거
-                tokenResponse.setRefreshToken(null);
+            tokenResponse.setRefreshToken(null);
 
                 return ResponseEntity.ok()
                         .header(HttpHeaders.SET_COOKIE, token.toString())
