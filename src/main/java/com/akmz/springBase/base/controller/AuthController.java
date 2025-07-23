@@ -267,7 +267,7 @@ public class AuthController {
             summary = "테스트용 인증 필요 API",
             description = "JWT 인증이 필요한 API로, Swagger 문서에 자물쇠(보안 요구사항) 표시가 된다."
     )
-    @SecurityRequirement(name = "bearerAuth")
+    //@SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<String> hello(
             @Parameter(description = "경로변수", required = true)
             @PathVariable String path,

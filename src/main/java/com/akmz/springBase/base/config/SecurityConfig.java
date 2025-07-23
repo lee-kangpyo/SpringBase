@@ -3,6 +3,7 @@ package com.akmz.springBase.base.config;
 import com.akmz.springBase.base.service.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @RequiredArgsConstructor
+@Log4j2
+@EnableMethodSecurity   // 메서드 레벨에서 권한 처리 허용 -> @PreAuthorize("hasRole('ADMIN')") // 관리자 권한 필요
 public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -45,6 +49,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         // 인증 실패 처리 (401 Unauthorized) 토큰 만료가 아닌 모든 401은 로그인 화면으로 이동
                         .authenticationEntryPoint((request, response, authException) -> {
+                            log.info("AuthenticationEntryPoint triggered. Exception type: {}", authException.getClass().getName());
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
                             response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
 

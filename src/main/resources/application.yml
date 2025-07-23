@@ -33,6 +33,11 @@ mybatis:
   type-aliases-package: com.akmz.springBase
   configuration:
     mapUnderscoreToCamelCase: true
+pagehelper:
+  helperDialect: h2
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql
 jwt:
   secret: ${JWT_SECRET_KEY}
   expiration: 3600000 # 1시간
@@ -48,3 +53,6 @@ ftp:
 
 logging:
   config: classpath:config/log/log4j2.yml
+
+debug:
+  include-exception-details: true   # 익셉션 메시지에 상세 로그 추가여부
