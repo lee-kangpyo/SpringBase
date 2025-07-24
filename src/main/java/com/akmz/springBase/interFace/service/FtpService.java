@@ -6,8 +6,6 @@ import com.akmz.springBase.interFace.model.dto.AttachFileResponse;
 import com.akmz.springBase.interFace.model.dto.AttachResponse;
 import com.akmz.springBase.interFace.model.entity.Attach;
 import com.akmz.springBase.interFace.model.entity.AttachFile;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
@@ -18,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,8 +23,7 @@ import java.io.OutputStream;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -103,6 +99,61 @@ public class FtpService {
             }
         }
         return attach;
+    }
+
+    /**
+     * 기존 첨부 묶음에 새로운 파일들을 추가합니다.
+     * 이 메서드는 트랜잭션으로 관리됩니다.
+     *
+     * @param attachId 파일을 추가할 첨부 묶음의 ID
+     * @param files 추가할 파일 목록
+     * @param uploaderId 업로더 ID
+     * @return 추가된 파일 정보 목록
+     * @throws IOException 파일 처리 중 오류 발생 시
+     * @throws IllegalArgumentException 존재하지 않는 첨부 ID일 경우
+     */
+    @Transactional
+    public List<AttachFile> addFilesToAttachment(Long attachId, List<MultipartFile> files, String uploaderId) throws IOException {
+        // 1. attachId 유효성 검사
+        Attach attach = attachMapper.findAttachById(attachId);
+        if (attach == null) {
+            throw new IllegalArgumentException("존재하지 않는 첨부 ID입니다: " + attachId);
+        }
+
+        List<AttachFile> addedFiles = new ArrayList<>();
+
+        // 2. 각 파일을 FTP에 업로드하고 DB에 파일 정보 저장
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+
+            // 2-1. 저장 경로 및 파일명 생성 (신규 업로드와 동일한 로직)
+            String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+            String remoteDirPath = "/uploads/" + datePath;
+            String originalFileName = file.getOriginalFilename();
+            String savedFileName = UUID.randomUUID().toString() + "_" + originalFileName;
+            String remoteFullPath = remoteDirPath + "/" + savedFileName;
+
+            // 2-2. FTP 서버에 파일 업로드
+            boolean uploadSuccess = uploadFileToFtp(file, remoteFullPath);
+
+            if (uploadSuccess) {
+                // 2-3. DB에 파일 메타데이터 저장
+                AttachFile attachFile = new AttachFile();
+                attachFile.setAttachId(attachId); // 기존 attachId 사용
+                attachFile.setOriginalFileName(originalFileName);
+                attachFile.setSavedFileName(savedFileName);
+                attachFile.setFilePath(remoteDirPath);
+                attachFile.setFileSize(file.getSize());
+                attachFile.setUploaderId(uploaderId);
+                attachMapper.insertAttachFile(attachFile);
+
+                addedFiles.add(attachFile); // 반환할 목록에 추가
+            } else {
+                // 업로드 실패 시 트랜잭션 롤백을 위해 예외 발생
+                throw new IOException("FTP 파일 업로드 실패: " + originalFileName);
+            }
+        }
+        return addedFiles;
     }
 
     /**
@@ -247,6 +298,9 @@ public class FtpService {
      */
     public void downloadAttachBundle(Long attachId, OutputStream outputStream) throws IOException {
         List<AttachFile> files = attachMapper.findFilesByAttachId(attachId);
+        // 대소문자를 구분하지 않는 TreeSet을 사용하여 파일명 중복을 안전하게 처리
+        Set<String> usedFileNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
         if (files.isEmpty()) {
             log.warn("다운로드할 첨부 묶음이 비어있습니다. attachId: {}", attachId);
             return; // 또는 예외 처리
@@ -255,7 +309,14 @@ public class FtpService {
         try (ZipOutputStream zos = new ZipOutputStream(outputStream)) {
             for (AttachFile file : files) {
                 String remoteFullPath = file.getFilePath() + "/" + file.getSavedFileName();
-                ZipEntry zipEntry = new ZipEntry(file.getOriginalFileName());
+                String originalFileName = file.getOriginalFileName();
+
+                // 헬퍼 메서드를 호출하여 고유한 파일명 생성
+                String uniqueFileName = generateUniqueFileName(usedFileNames, originalFileName);
+                // 사용된 파일명을 Set에 추가
+                usedFileNames.add(uniqueFileName);
+
+                ZipEntry zipEntry = new ZipEntry(uniqueFileName);
                 zos.putNextEntry(zipEntry);
 
                 // FTP에서 파일 읽어와 ZIP 스트림에 쓰기
@@ -267,6 +328,8 @@ public class FtpService {
                 try (InputStream ftpInputStream = ftpClient.retrieveFileStream(remoteFullPath)) {
                     if (ftpInputStream == null) {
                         log.error("FTP에서 파일 스트림을 가져오지 못했습니다: {}", remoteFullPath);
+                        // 특정 파일 실패 시에도 계속 진행할지, 아니면 전체를 중단할지 정책에 따라 결정
+                        // 여기서는 예외를 던져 전체 중단
                         throw new IOException("FTP에서 파일 스트림을 가져오지 못했습니다: " + file.getOriginalFileName());
                     }
                     byte[] buffer = new byte[4096];
@@ -472,5 +535,34 @@ public class FtpService {
         } finally {
             ftpClient.changeWorkingDirectory(current);
         }
+    }
+
+    /**
+     * ZIP 파일 내에서 고유한 파일명을 생성.
+     * 중복될 경우 "파일명 (카운트).확장자" 형태로 만듭니다.
+     * @param usedFileNames 현재 ZIP에 추가된 파일명 Set
+     * @param originalFileName 원본 파일명
+     * @return 고유한 파일명
+     */
+    private String generateUniqueFileName(Set<String> usedFileNames, String originalFileName) {
+        if (!usedFileNames.contains(originalFileName)) {
+            return originalFileName;
+        }
+
+        String nameWithoutExtension = originalFileName;
+        String extension = "";
+        int dotIndex = originalFileName.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < originalFileName.length() - 1) {
+            nameWithoutExtension = originalFileName.substring(0, dotIndex);
+            extension = originalFileName.substring(dotIndex);
+        }
+
+        int count = 1;
+        String newFileName;
+        do {
+            newFileName = String.format("%s (%d)%s", nameWithoutExtension, count++, extension);
+        } while (usedFileNames.contains(newFileName));
+
+        return newFileName;
     }
 }

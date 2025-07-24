@@ -62,4 +62,13 @@
         ORDER BY CREATED_AT DESC
     </select>
 
+    <select id="findAttachById" parameterType="long" resultType="com.akmz.springBase.interFace.model.entity.Attach">
+        SELECT
+            attach_id, attach_name, creator_id, created_at
+        FROM
+            attach
+        WHERE
+            attach_id = #{attachId}
+    </select>
+
 </mapper>

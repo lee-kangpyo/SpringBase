@@ -16,6 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 3️⃣ 허용할 HTTP 메서드
                 .allowedHeaders("*") // 4️⃣ 모든 헤더를 허용합니다. (인증 토큰 등)
                 .allowCredentials(true) // 5️⃣ 인증 정보(쿠키, HTTP 인증, JWT 등)를 요청에 포함할 수 있도록 허용합니다.
-                .maxAge(3600); // 6️⃣ Preflight 요청 결과를 캐시할 시간 (초 단위)
+                .maxAge(3600)           // 6️⃣ Preflight 요청 결과를 캐시할 시간 (초 단위)
+                .exposedHeaders("content-disposition"); // ftp 다운로드 할때 res 헤더에 파일명 저장되는 위치
     }
 }

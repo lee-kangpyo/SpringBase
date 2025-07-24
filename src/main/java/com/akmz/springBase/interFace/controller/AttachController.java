@@ -69,6 +69,32 @@ public class AttachController {
         }
     }
 
+    @PostMapping(value = "/{attachId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "기존 첨부에 파일 추가", description = "기존 첨부 묶음에 새로운 파일들을 추가합니다.")
+    public ResponseEntity<?> addFilesToAttachment(
+            @Parameter(description = "파일을 추가할 첨부의 ID", required = true) @PathVariable Long attachId,
+            @Parameter(description = "추가할 파일들", required = true) @RequestParam("files") List<MultipartFile> files,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (files == null || files.isEmpty()) {
+            return ResponseEntity.badRequest().body("업로드할 파일이 없습니다.");
+        }
+
+        String uploaderId = (userDetails != null) ? userDetails.getUsername() : "anonymousUser";
+
+        try {
+            // 새로운 서비스 메서드 호출
+            List<AttachFile> addedFiles = ftpService.addFilesToAttachment(attachId, files, uploaderId);
+            return ResponseEntity.ok(addedFiles);
+        } catch (IllegalArgumentException e) {
+            // 존재하지 않는 attachId일 경우
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IOException e) {
+            log.error("기존 첨부에 파일 추가 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드에 실패했습니다: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{attachId}/files")
     @Operation(summary = "특정 첨부에 속한 파일 목록 조회", description = "첨부 ID를 이용해 해당 묶음에 포함된 모든 파일 목록을 조회.")
     public ResponseEntity<List<AttachFileResponse>> getAttachmentFiles(

@@ -66,6 +66,13 @@ public interface AttachMapper {
     List<Attach> findAllAttaches();
 
     /**
+     * 첨부 ID로 특정 첨부 묶음의 정보를 조회합니다.
+     * @param attachId 조회할 첨부 ID
+     * @return 첨부 묶음 정보
+     */
+    Attach findAttachById(@Param("attachId") Long attachId);
+
+    /**
      * 모든 첨부파일의 총 개수를 조회합니다. (삭제된 파일 제외)
      * @return 총 첨부파일 개수
      */
