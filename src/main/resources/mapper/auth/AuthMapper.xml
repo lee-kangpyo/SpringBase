@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.akmz.springBase.base.mapper.AuthMapper">
+<mapper namespace="com.akmz.springBase.auth.mapper.AuthMapper">
 
 
     <!-- 재사용할 WHERE 조건 SQL 조각 정의 -->

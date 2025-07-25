@@ -40,8 +40,8 @@ pagehelper:
   params: count=countSql
 jwt:
   secret: ${JWT_SECRET_KEY}
-  expiration: 3600000 # 1시간
-  #  expiration: 1 # 만료 테스트용
+#  expiration: 3600000 # 1시간
+  expiration: 5000 # 만료 테스트용 10초
   refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)
 
 ftp:

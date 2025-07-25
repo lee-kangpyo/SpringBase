@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BASE">
+    <sql id="userTable">users</sql>
+    <sql id="authorityTable">authorities</sql>
+    <sql id="emailTable">users</sql>
+    <sql id="authTokenTable">auth_tokens</sql>
+    <sql id="attachTable">ATTACH</sql>
+    <sql id="attachFileTable">ATTACH_FILE</sql>
+</mapper>

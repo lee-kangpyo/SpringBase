@@ -1,8 +1,8 @@
 package com.akmz.springBase.admin;
 
-import com.akmz.springBase.base.mapper.AuthMapper;
-import com.akmz.springBase.base.model.dto.LoginRequest;
-import com.akmz.springBase.base.test.DotenvContextInitializer;
+import com.akmz.springBase.auth.mapper.AuthMapper;
+import com.akmz.springBase.auth.model.dto.LoginRequest;
+import com.akmz.springBase.common.test.DotenvContextInitializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,9 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
+
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -26,8 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ContextConfiguration(initializers = DotenvContextInitializer.class)
+@Sql(scripts = {"classpath:sql/clean_all_tables.sql", "classpath:schema.sql", "classpath:data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@Transactional
 public class AdminIntegrationTest {
 
     @Autowired
@@ -56,7 +57,7 @@ public class AdminIntegrationTest {
 
     @Test
     @DisplayName("관리자 사용자 목록 조회 성공 테스트 - ADMIN 권한")
-    @Sql(scripts = {"classpath:sql/clean_all_tables.sql", "classpath:data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    
     void admin_user_list_success_test() throws Exception {
         // given: ADMIN 권한을 가진 사용자 로그인
         String adminAccessToken = getAccessToken("admin", "admin"); // data.sql에 admin/admin 사용자 존재
@@ -74,7 +75,7 @@ public class AdminIntegrationTest {
 
     @Test
     @DisplayName("관리자 사용자 목록 조회 실패 테스트 - USER 권한 (403 Forbidden)")
-    @Sql(scripts = {"classpath:sql/clean_all_tables.sql", "classpath:data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    
     void admin_user_list_forbidden_test() throws Exception {
         // given: USER 권한을 가진 사용자 로그인
         String userAccessToken = getAccessToken("user", "user"); // data.sql에 user/user 사용자 존재
@@ -90,7 +91,7 @@ public class AdminIntegrationTest {
 
     @Test
     @DisplayName("관리자 사용자 목록 조회 실패 테스트 - 인증되지 않은 사용자 (401 Unauthorized)")
-    @Sql(scripts = {"classpath:sql/clean_all_tables.sql", "classpath:data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    
     void admin_user_list_unauthorized_test() throws Exception {
         // when: 인증되지 않은 상태로 관리자 사용자 목록 조회 API 호출
         ResultActions result = mockMvc.perform(get("/api/admin/userList")

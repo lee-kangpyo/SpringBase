@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.akmz.springBase.interFace.mapper.AttachMapper">
+<mapper namespace="com.akmz.springBase.attach.mapper.AttachMapper">
 
     <insert id="insertAttach" useGeneratedKeys="true" keyProperty="attachId">
-        INSERT INTO ATTACH (ATTACH_NAME, CREATOR_ID, CREATED_AT)
+        INSERT INTO <include refid="BASE.attachTable"/> (ATTACH_NAME, CREATOR_ID, CREATED_AT)
         VALUES (#{attachName}, #{creatorId}, NOW())
     </insert>
 
     <insert id="insertAttachFile">
-        INSERT INTO ATTACH_FILE (ATTACH_ID, ORIGINAL_FILE_NAME, SAVED_FILE_NAME, FILE_PATH, FILE_SIZE, UPLOADER_ID, UPLOADED_AT, STATUS)
+        INSERT INTO <include refid="BASE.attachFileTable"/> (ATTACH_ID, ORIGINAL_FILE_NAME, SAVED_FILE_NAME, FILE_PATH, FILE_SIZE, UPLOADER_ID, UPLOADED_AT, STATUS)
         VALUES (#{attachId}, #{originalFileName}, #{savedFileName}, #{filePath}, #{fileSize}, #{uploaderId}, NOW(), 'AVAILABLE')
     </insert>
 
-    <select id="findFilesByAttachId" resultType="com.akmz.springBase.interFace.model.entity.AttachFile">
+    <select id="findFilesByAttachId" resultType="com.akmz.springBase.attach.model.entity.AttachFile">
         SELECT
             FILE_ID, ATTACH_ID, ORIGINAL_FILE_NAME, SAVED_FILE_NAME, FILE_PATH, FILE_SIZE, UPLOADER_ID, UPLOADED_AT, STATUS, DELETED_AT
-        FROM ATTACH_FILE
+        FROM <include refid="BASE.attachFileTable"/>
         WHERE ATTACH_ID = #{attachId}
           AND STATUS = 'AVAILABLE'
         ORDER BY UPLOADED_AT ASC
     </select>
 
-    <select id="findFileById" resultType="com.akmz.springBase.interFace.model.entity.AttachFile">
+    <select id="findFileById" resultType="com.akmz.springBase.attach.model.entity.AttachFile">
         SELECT
             FILE_ID, ATTACH_ID, ORIGINAL_FILE_NAME, SAVED_FILE_NAME, FILE_PATH, FILE_SIZE, UPLOADER_ID, UPLOADED_AT, STATUS, DELETED_AT
-        FROM ATTACH_FILE
+        FROM <include refid="BASE.attachFileTable"/>
         WHERE FILE_ID = #{fileId}
     </select>
 
     <update id="softDeleteFileById">
-        UPDATE ATTACH_FILE
+        UPDATE <include refid="BASE.attachFileTable"/>
         SET
             STATUS = 'DELETED',
             DELETED_AT = NOW()
@@ -38,7 +38,7 @@
     </update>
 
     <update id="softDeleteFilesByAttachId">
-        UPDATE ATTACH_FILE
+        UPDATE <include refid="BASE.attachFileTable"/>
         SET
             STATUS = 'DELETED',
             DELETED_AT = NOW()
@@ -48,25 +48,25 @@
 
 
 
-    <select id="findAllAttachFiles" resultType="com.akmz.springBase.interFace.model.entity.AttachFile">
+    <select id="findAllAttachFiles" resultType="com.akmz.springBase.attach.model.entity.AttachFile">
         SELECT
             FILE_ID, ATTACH_ID, ORIGINAL_FILE_NAME, SAVED_FILE_NAME, FILE_PATH, FILE_SIZE, UPLOADER_ID, UPLOADED_AT, STATUS, DELETED_AT
-        FROM ATTACH_FILE
+        FROM <include refid="BASE.attachFileTable"/>
         WHERE STATUS = 'AVAILABLE'
     </select>
 
-    <select id="findAllAttaches" resultType="com.akmz.springBase.interFace.model.entity.Attach">
+    <select id="findAllAttaches" resultType="com.akmz.springBase.attach.model.entity.Attach">
         SELECT
             ATTACH_ID, ATTACH_NAME, CREATOR_ID, CREATED_AT
-        FROM ATTACH
+        FROM <include refid="BASE.attachTable"/>
         ORDER BY CREATED_AT DESC
     </select>
 
-    <select id="findAttachById" parameterType="long" resultType="com.akmz.springBase.interFace.model.entity.Attach">
+    <select id="findAttachById" parameterType="long" resultType="com.akmz.springBase.attach.model.entity.Attach">
         SELECT
             attach_id, attach_name, creator_id, created_at
         FROM
-            attach
+            <include refid="BASE.attachTable"/>
         WHERE
             attach_id = #{attachId}
     </select>

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.akmz.springBase.base.mapper.AuthTokenMapper">
+<mapper namespace="com.akmz.springBase.auth.mapper.AuthTokenMapper">
 
-    <insert id="insertAuthToken" parameterType="com.akmz.springBase.base.model.entity.AuthToken">
+    <insert id="insertAuthToken" parameterType="com.akmz.springBase.auth.model.entity.AuthToken">
         INSERT INTO <include refid="BASE.authTokenTable"/> (TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED)
         VALUES (#{token}, #{userName}, #{tokenType}, #{expiryDate}, #{createdDate}, #{used})
     </insert>
 
-    <select id="findByToken" parameterType="string" resultType="com.akmz.springBase.base.model.entity.AuthToken">
+    <select id="findByToken" parameterType="string" resultType="com.akmz.springBase.auth.model.entity.AuthToken">
         SELECT
             ID, TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED
         FROM
@@ -37,7 +37,7 @@
             AND EXPIRY_DATE > NOW() -- 만료되지 않은 토큰만 무효화
     </update>
 
-    <select id="findLatestTokenByUserNameAndType" resultType="com.akmz.springBase.base.model.entity.AuthToken">
+    <select id="findLatestTokenByUserNameAndType" resultType="com.akmz.springBase.auth.model.entity.AuthToken">
         SELECT
             ID, TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED
         FROM
