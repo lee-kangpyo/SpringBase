@@ -1,5 +1,6 @@
 package com.akmz.springBase.auth;
 
+import com.akmz.springBase.auth.mapper.AuthMapper;
 import com.akmz.springBase.auth.model.dto.LoginRequest;
 import com.akmz.springBase.common.test.DotenvContextInitializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,8 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ContextConfiguration(initializers = DotenvContextInitializer.class)
-@Sql(scripts = {"classpath:sql/clean_all_tables.sql", "classpath:schema.sql", "classpath:data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class AccountLockIntegrationTest {
 
     @Autowired
@@ -31,6 +30,9 @@ class AccountLockIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private AuthMapper authMapper;
 
     @Test
     @DisplayName("계정 잠금 테스트 - 5회 로그인 실패 시 계정 잠금")
@@ -55,5 +57,8 @@ class AccountLockIntegrationTest {
         // then: 계정 잠금 확인
         result.andExpect(status().isUnauthorized())
                 .andExpect(content().string("User account is locked"));
+
+        // 테스트 후 계정 잠금 해제 (다음 테스트에 영향 주지 않도록)
+        authMapper.resetLoginFailureCount("user");
     }
 }

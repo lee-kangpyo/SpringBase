@@ -1,0 +1,69 @@
+
+spring:
+  sql:
+    init:
+      mode: always
+  profiles:
+    active: local
+  application:
+    name: springBase
+  datasource:
+    schema: classpath:schema.sql
+    data: classpath:data.sql
+    initialization-mode: always
+    #    url: jdbc:h2:mem:testdb
+    #    driver-class-name: org.h2.Driver
+    # url: jdbc:log4jdbc:mysql://localhost:3306/mydb # 예시: MySQL 데이터베이스 사용 시
+    # url: jdbc:log4jdbc:oracle:thin:@localhost:1521:xe # 예시: Oracle 데이터베이스 사용 시
+    url: jdbc:log4jdbc:h2:mem:testdb
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true # H2 웹 콘솔 사용 허용
+      path: /h2-console # 콘솔 접속 경로 (기본값)
+  thymeleaf:
+    cache: false # 템플릿 캐시 끄기 (개발용)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_ID}
+    password: ${EMAIL_PW}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+app:
+  base-url: http://localhost:3000 # 애플리케이션 기본 URL (비밀번호 재설정 링크 생성용)
+mybatis:
+  mapper-locations:
+    - classpath:mapper/auth/**/*.xml
+    - classpath:mapper/attach/**/*.xml
+    - classpath:mapper/common/**/*.xml
+    - classpath:mapper/admin/**/*.xml
+  type-aliases-package: com.akmz.springBase
+  configuration:
+    mapUnderscoreToCamelCase: true
+pagehelper:
+  helperDialect: h2
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  expiration: 3600000 # 1시간
+#  expiration: 5000 # 만료 테스트용 10초
+  refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)
+
+ftp:
+  host: ${FTP_HOST}
+  port: ${FTP_PORT}
+  username: ${FTP_USERNAME}
+  password: ${FTP_PASSWORD}
+  remote-base-dir: ${FTP_REMOTE_BASE_DIR:/} # 기본값은 /
+
+logging:
+  config: classpath:config/log/log4j2.yml
+
+debug:
+  include-exception-details: true   # 익셉션 메시지에 상세 로그 추가여부

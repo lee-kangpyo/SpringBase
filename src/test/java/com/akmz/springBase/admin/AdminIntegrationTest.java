@@ -28,7 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ContextConfiguration(initializers = DotenvContextInitializer.class)
 @Sql(scripts = {"classpath:sql/clean_all_tables.sql", "classpath:schema.sql", "classpath:data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AdminIntegrationTest {
 
     @Autowired

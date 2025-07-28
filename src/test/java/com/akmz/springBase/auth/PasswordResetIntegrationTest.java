@@ -20,11 +20,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
+
+
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Date;
 import java.util.UUID;
@@ -42,8 +42,6 @@ import static org.mockito.Mockito.doNothing;
 @AutoConfigureMockMvc
 @ContextConfiguration(initializers = DotenvContextInitializer.class)
 @Transactional
-@Sql(scripts = {"classpath:sql/clean_all_tables.sql", "classpath:data.sql", "classpath:sql/reset_user_login_status.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_CLASS)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PasswordResetIntegrationTest {
 
     @Autowired

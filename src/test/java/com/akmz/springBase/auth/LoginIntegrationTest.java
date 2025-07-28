@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ContextConfiguration(initializers = DotenvContextInitializer.class)
-
 class LoginIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(LoginIntegrationTest.class);
 
