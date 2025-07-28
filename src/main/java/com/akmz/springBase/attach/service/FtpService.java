@@ -1,5 +1,6 @@
 package com.akmz.springBase.attach.service;
 
+import com.akmz.springBase.attach.model.dto.TempFileResponse;
 import com.akmz.springBase.common.util.PageUtils;
 import com.akmz.springBase.attach.mapper.AttachMapper;
 import com.akmz.springBase.attach.model.dto.AttachFileResponse;
@@ -53,7 +54,7 @@ public class FtpService {
     // ===================================================================================
 
     /**
-     * 새로운 첨부파일들을 업로드하고 데이터베이스에 정보를 기록합니다.
+     * [High-level] 새로운 첨부파일들을 업로드하고 데이터베이스에 정보를 기록합니다.
      * 이 메서드는 트랜잭션으로 관리됩니다.
      *
      * @param files 업로드할 파일 목록
@@ -100,6 +101,34 @@ public class FtpService {
             }
         }
         return attach;
+    }
+
+    /**
+     * [High-level] 임시 파일을 FTP 서버에 업로드하고 경로를 반환합니다. DB에 기록되지 않습니다.
+     *
+     * @param file 업로드할 MultipartFile 객체
+     * @return FTP 서버에 저장된 파일의 전체 경로
+     * @throws IOException 파일 처리 중 오류 발생 시
+     */
+    public TempFileResponse uploadTempFile(MultipartFile file) throws IOException {
+        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        String remoteDirPath = "/temp-uploads/" + datePath;
+        String originalFileName = file.getOriginalFilename();
+        String savedFileName = UUID.randomUUID().toString() + "_" + originalFileName;
+        String remoteFullPath = remoteDirPath + "/" + savedFileName;
+
+        boolean uploadSuccess = uploadFileToFtp(file, remoteFullPath);
+
+        if (uploadSuccess) {
+            log.info("임시 파일 '{}'가 FTP 서버에 성공적으로 업로드되었습니다.", remoteFullPath);
+            return TempFileResponse.builder()
+                    .url(remoteFullPath)
+                    .name(originalFileName)
+                    .contentType(file.getContentType())
+                    .build();
+        } else {
+            throw new IOException("FTP 임시 파일 업로드 실패: " + originalFileName);
+        }
     }
 
     /**

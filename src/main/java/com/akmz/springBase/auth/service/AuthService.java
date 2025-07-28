@@ -247,7 +247,7 @@ public class AuthService {
         String text = "비밀번호를 재설정하려면 다음 링크를 클릭하세요: " + resetLink + "\n\n이 링크는 30분 동안 유효합니다.";
 
         EmailRequest emailRequest = EmailRequest.builder()
-                .to(user.getEmail())
+                .to(List.of(user.getEmail()))
                 .subject(subject)
                 .text(text)
                 .isHtml(false)
