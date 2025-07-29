@@ -25,4 +25,6 @@ public interface AuthMapper {
     boolean existsByEmail(@Param("email") String email);
     boolean existsByUserName(@Param("userName") String userName);
     void save(AuthUser authUser);
+
+    AuthUser findByGoogleId(@Param("googleId") String googleId);
 }

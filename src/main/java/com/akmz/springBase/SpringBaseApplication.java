@@ -4,9 +4,11 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @MapperScan(basePackages = {"com.akmz.springBase.auth.mapper", "com.akmz.springBase.admin.mapper", "com.akmz.springBase.attach.mapper"})
+@EnableScheduling
 public class SpringBaseApplication {
 
 	public static void main(String[] args) {

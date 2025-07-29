@@ -10,6 +10,7 @@ import com.akmz.springBase.attach.model.entity.AttachFile;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -110,9 +111,18 @@ public class FtpService {
      * @return FTP 서버에 저장된 파일의 전체 경로
      * @throws IOException 파일 처리 중 오류 발생 시
      */
+    @Value("${ftp.temp-uploads-dir:/temp-uploads}")
+    private String tempUploadsDir;
+
+    /**
+     * [High-level] 임시 파일을 FTP 서버에 업로드하고 경로를 반환합니다. DB에 기록되지 않습니다.
+     *
+     * @param file 업로드할 MultipartFile 객체
+     * @return FTP 서버에 저장된 파일의 전체 경로
+     * @throws IOException 파일 처리 중 오류 발생 시
+     */
     public TempFileResponse uploadTempFile(MultipartFile file) throws IOException {
-        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-        String remoteDirPath = "/temp-uploads/" + datePath;
+        String remoteDirPath = tempUploadsDir;
         String originalFileName = file.getOriginalFilename();
         String savedFileName = UUID.randomUUID().toString() + "_" + originalFileName;
         String remoteFullPath = remoteDirPath + "/" + savedFileName;
@@ -473,6 +483,53 @@ public class FtpService {
             disconnect(ftpClient);
         }
         return success;
+    }
+
+    /**
+     * [Low-level] 특정 원격 디렉토리의 모든 파일 이름을 가져옵니다.
+     *
+     * @param remoteDirPath 파일 목록을 가져올 원격 디렉토리 경로
+     * @return 파일 이름 목록
+     * @throws IOException FTP 통신 중 오류 발생 시
+     */
+    public List<String> listFileNames(String remoteDirPath) throws IOException {
+        FTPClient ftpClient = ftpClientFactory.createClient();
+        if (!connectAndLogin(ftpClient)) {
+            throw new IOException("FTP 서버에 연결할 수 없습니다.");
+        }
+
+        try {
+            return Arrays.stream(ftpClient.listFiles(remoteDirPath))
+                    .filter(f -> f != null && f.isFile())
+                    .map(f -> remoteDirPath + "/" + f.getName()) // Return full path
+                    .collect(Collectors.toList());
+        } finally {
+            disconnect(ftpClient);
+        }
+    }
+
+    /**
+     * [Low-level] 특정 원격 파일의 최종 수정 시간을 가져옵니다.
+     *
+     * @param remoteFilePath 파일의 전체 경로
+     * @return 최종 수정 시간(Timestamp)
+     * @throws IOException FTP 통신 중 오류 발생 시
+     */
+    public Calendar getFileTimestamp(String remoteFilePath) throws IOException {
+        FTPClient ftpClient = ftpClientFactory.createClient();
+        if (!connectAndLogin(ftpClient)) {
+            throw new IOException("FTP 서버에 연결할 수 없습니다.");
+        }
+
+        try {
+            FTPFile[] files = ftpClient.listFiles(remoteFilePath);
+            if (files != null && files.length > 0) {
+                return files[0].getTimestamp();
+            }
+            return null;
+        } finally {
+            disconnect(ftpClient);
+        }
     }
 
 

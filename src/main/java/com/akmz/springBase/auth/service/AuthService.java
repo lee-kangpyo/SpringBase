@@ -1,5 +1,6 @@
 package com.akmz.springBase.auth.service;
 
+import com.akmz.springBase.auth.model.dto.GoogleLoginRequest;
 import com.akmz.springBase.common.config.JwtTokenProvider;
 import com.akmz.springBase.auth.exception.ExpiredResetTokenException;
 import com.akmz.springBase.auth.exception.InvalidRefreshTokenException;
@@ -52,6 +53,7 @@ public class AuthService {
 
     /**
      * 로그인 api 토큰 발급 기능, db저장 기능 추가
+     *
      * @param request
      * @return
      */
@@ -69,27 +71,12 @@ public class AuthService {
             // 성공적인 로그인 시에만 실패 횟수 초기화
             loginSuccess(username);
 
-            // UserDetails 객체에서 사용자 정보와 권한 가져오기
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            List<String> authorities = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority).toList();
-
-            // 토큰 발급
-            String accessToken = jwtTokenProvider.createToken(userDetails.getUsername(), authorities);
-            String refreshToken = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
-
-            saveRefreshToken(userDetails.getUsername(), refreshToken);
-
-            return TokenResponse.builder()
-                    .userName(userDetails.getUsername())
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .build();
+            return issueAndSaveTokens(username);
         } catch (LockedException | BadCredentialsException e) {
             // 계정 잠김, 비밀번호 불일치 시: 실패 횟수 증가 (잠긴 상태에서 시도해도 카운트 증가)
             loginFailure(username); // 실패 횟수 증가
             throw e;
-        // UsernameNotFoundException 은 사용자 열거 공격을 막기 위해 스프링 내부적으로 BadCredentialsException 으로 변환해서 던짐
+            // UsernameNotFoundException 은 사용자 열거 공격을 막기 위해 스프링 내부적으로 BadCredentialsException 으로 변환해서 던짐
         } catch (UsernameNotFoundException e) { // 사용자 없음 (UsernameNotFoundException) 
             throw e;
         } catch (DisabledException e) { // 계정 비활성화 시 (DisabledException)
@@ -103,6 +90,7 @@ public class AuthService {
 
     /**
      * 회원가입 처리
+     *
      * @param request 회원가입 요청 DTO
      * @throws com.akmz.springBase.auth.exception.UserAlreadyExistsException 이메일 또는 사용자명이 이미 존재할 경우
      */
@@ -155,6 +143,7 @@ public class AuthService {
 
     /**
      * 로그 아웃
+     *
      * @userId 해당하는 리프레쉬 토큰 삭제
      */
     public void logout(String userId) {
@@ -163,10 +152,11 @@ public class AuthService {
 
     /**
      * 엑세스 토큰 재발급
+     *
      * @param refreshToken 리프레쉬 토큰
      * @return
      */
-    public TokenResponse  refreshAccessToken(String refreshToken){
+    public TokenResponse refreshAccessToken(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new InvalidRefreshTokenException("Invalid refresh token");
         }
@@ -179,24 +169,13 @@ public class AuthService {
             throw new RefreshTokenMismatchException("Refresh token does not match");
         }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-        String newAccessToken = jwtTokenProvider.createToken(
-                userDetails.getUsername(),
-                userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()
-        );
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
-        saveRefreshToken(username, newRefreshToken); // DB에 새로운 리프레시 토큰 저장
-
-        return TokenResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken) // 새로 발급된 리프레시 토큰 반환
-                .build();
+        return issueAndSaveTokens(username);
     }
 
     /**
      * 리프레쉬 토큰을 db에 저장하는 메서드
-     * @param username 사용자이름 또는 아이디 같은 유니크한 키값
+     *
+     * @param username     사용자이름 또는 아이디 같은 유니크한 키값
      * @param refreshToken 리프레쉬 토큰
      */
     private void saveRefreshToken(String username, String refreshToken) {
@@ -214,9 +193,10 @@ public class AuthService {
 
     /**
      * 비밀번호 재설정 요청 처리
+     *
      * @param userId 재설정을 요청한 사용자의 이메일 (여기서는 userName)
      * @throws UsernameNotFoundException 해당 이메일로 등록된 사용자가 없을 경우
-     * @throws MessagingException 이메일 전송 실패 시
+     * @throws MessagingException        이메일 전송 실패 시
      */
     @Transactional
     public void requestPasswordReset(String userId) throws MessagingException {
@@ -259,6 +239,7 @@ public class AuthService {
 
     /**
      * 비밀번호 재설정 토큰 검증
+     *
      * @param token 검증할 비밀번호 재설정 토큰
      * @throws com.akmz.springBase.auth.exception.InvalidResetTokenException 유효하지 않은 토큰일 경우 (404 Not Found)
      * @throws com.akmz.springBase.auth.exception.ExpiredResetTokenException 만료된 토큰일 경우 (410 Gone)
@@ -284,11 +265,12 @@ public class AuthService {
 
     /**
      * 비밀번호 재설정 처리
-     * @param token 재설정 토큰
+     *
+     * @param token       재설정 토큰
      * @param newPassword 새 비밀번호
      * @throws com.akmz.springBase.auth.exception.InvalidResetTokenException 유효하지 않은 토큰일 경우
      * @throws com.akmz.springBase.auth.exception.ExpiredResetTokenException 만료된 토큰일 경우
-     * @throws UsernameNotFoundException 토큰에 해당하는 사용자가 없을 경우
+     * @throws UsernameNotFoundException                                     토큰에 해당하는 사용자가 없을 경우
      */
     @Transactional
     public void resetPassword(String token, String newPassword) {
@@ -327,6 +309,7 @@ public class AuthService {
 
     /**
      * 유저 아이디로 이메일 주소 가져오기
+     *
      * @param userId
      * @return
      */
@@ -334,6 +317,62 @@ public class AuthService {
         return authMapper.getEmailAddr(userId);
     }
 
+    /**
+     * 구글 로그인 처리: googleId로 사용자 조회 후 없으면 생성, 있으면 로그인 처리
+     *
+     * @param request GoogleLoginRequest DTO (googleId, email, name 포함)
+     * @return JWT Access Token 및 Refresh Token
+     */
+    @Transactional
+    public TokenResponse processGoogleLogin(GoogleLoginRequest request) {
+        AuthUser authUser = authMapper.findByGoogleId(request.getGoogleId());
 
+        if (authUser == null) {
+            // googleId로 사용자를 찾지 못한 경우, 새로운 사용자 생성
+            log.info("새로운 구글 사용자 등록: {}", request.getEmail());
+
+            AuthUser newUser = new AuthUser();
+            // userName은 이메일을 사용하거나, 필요에 따라 다른 고유한 값을 생성할 수 있습니다.
+            // 여기서는 이메일을 userName으로 사용합니다.
+            newUser.setUserName(request.getEmail());
+            newUser.setEmail(request.getEmail());
+            newUser.setGoogleId(request.getGoogleId());
+            // 소셜 로그인 사용자는 일반 비밀번호 로그인을 하지 않으므로,
+            // 예측 불가능한 안전한 임의의 값을 비밀번호로 설정합니다.
+            newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            newUser.setUseYn("Y"); // 기본적으로 사용 가능
+            newUser.setLoginFailureCount(0); // 로그인 실패 횟수 초기화
+            newUser.setRole("USER"); // 기본 역할 설정 (필요에 따라 변경)
+
+            authMapper.save(newUser);
+            authUser = newUser; // 새로 생성된 사용자로 설정
+        } else {
+            log.info("기존 구글 사용자 로그인: {}", authUser.getEmail());
+        }
+
+        return issueAndSaveTokens(authUser.getUserName());
+    }
+
+    /**
+     * JWT Access Token 및 Refresh Token을 발급하고 저장하는 헬퍼 메서드
+     *
+     * @param username 토큰을 발급할 사용자명
+     * @return 발급된 토큰 응답 객체
+     */
+    private TokenResponse issueAndSaveTokens(String username) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        List<String> authorities = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority).toList();
+
+        String accessToken = jwtTokenProvider.createToken(userDetails.getUsername(), authorities);
+        String refreshToken = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
+
+        saveRefreshToken(userDetails.getUsername(), refreshToken);
+
+        return TokenResponse.builder()
+                .userName(userDetails.getUsername())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
 }
-

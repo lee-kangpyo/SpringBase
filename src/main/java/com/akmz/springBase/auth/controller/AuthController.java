@@ -4,10 +4,7 @@ import com.akmz.springBase.auth.exception.ExpiredResetTokenException;
 import com.akmz.springBase.auth.exception.InvalidRefreshTokenException;
 import com.akmz.springBase.auth.exception.InvalidResetTokenException;
 import com.akmz.springBase.auth.exception.RefreshTokenMismatchException;
-import com.akmz.springBase.auth.model.dto.LoginRequest;
-import com.akmz.springBase.auth.model.dto.PasswordResetConfirmRequest;
-import com.akmz.springBase.auth.model.dto.PasswordResetRequest;
-import com.akmz.springBase.auth.model.dto.TokenResponse;
+import com.akmz.springBase.auth.model.dto.*;
 import com.akmz.springBase.auth.service.AuthService;
 import com.akmz.springBase.auth.service.AuthService;
 import io.jsonwebtoken.JwtException;
@@ -32,7 +29,6 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import com.akmz.springBase.auth.model.dto.UserRegistrationRequest;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -124,6 +120,40 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Error during user registration: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("회원가입 중 오류가 발생했습니다.");
+        }
+    }
+
+    @PostMapping("/google")
+    @Operation(
+            summary = "구글 로그인 API",
+            description = "구글 계정 정보를 받아서 인증 후 JWT Access Token과 Refresh Token을 생성하여 반환한다. 인증이 필요하지 않음",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "로그인 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+                @ApiResponse(responseCode = "400", description = "잘못된 요청 - 입력값 검증 실패"),
+                @ApiResponse(responseCode = "500", description = "서버 오류")
+            }
+    )
+    public ResponseEntity<?> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        log.info("Google login request for email: {}", request.getEmail());
+        try {
+            TokenResponse tokenResponse = authService.processGoogleLogin(request);
+
+            ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
+                    .httpOnly(true)
+                    .secure("PROD".equals(MODE))
+                    .maxAge(refreshExpiration / 1000)
+                    .sameSite("Lax")
+                    .path("/")
+                    .build();
+            // 쿠키에 포함한 리프레쉬 토큰 제거
+            tokenResponse.setRefreshToken(null);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, token.toString())
+                    .body(tokenResponse);
+        } catch (Exception e) {
+            log.error("Google login failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("구글 로그인 처리 중 오류가 발생했습니다.");
         }
     }
 
