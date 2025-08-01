@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akmz.springBase.admin.mapper.RoleResourceMappingMapper">
+
+    <resultMap id="roleResourceMappingResultMap" type="com.akmz.springBase.admin.model.entity.RoleResourceMapping">
+        <id property="id" column="ID"/>
+        <result property="roleId" column="ROLE_ID"/>
+        <result property="resourceId" column="RESOURCE_ID"/>
+    </resultMap>
+
+    <select id="findMappingsByRoleId" resultMap="roleResourceMappingResultMap">
+        SELECT ID, ROLE_ID, RESOURCE_ID
+        FROM ROLE_RESOURCE_MAPPINGS
+        WHERE ROLE_ID = #{roleId}
+    </select>
+
+    <select id="findMappingsByResourceId" resultMap="roleResourceMappingResultMap">
+        SELECT ID, ROLE_ID, RESOURCE_ID
+        FROM ROLE_RESOURCE_MAPPINGS
+        WHERE RESOURCE_ID = #{resourceId}
+    </select>
+
+    <insert id="insertMapping" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ROLE_RESOURCE_MAPPINGS (ROLE_ID, RESOURCE_ID)
+        VALUES (#{roleId}, #{resourceId})
+    </insert>
+
+    <delete id="deleteMapping">
+        DELETE FROM ROLE_RESOURCE_MAPPINGS
+        WHERE ROLE_ID = #{roleId} AND RESOURCE_ID = #{resourceId}
+    </delete>
+
+</mapper>

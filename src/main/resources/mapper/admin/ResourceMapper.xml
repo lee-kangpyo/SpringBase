@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akmz.springBase.admin.mapper.ResourceMapper">
+
+    <resultMap id="resourceResultMap" type="com.akmz.springBase.admin.model.entity.Resource">
+        <id property="resourceId" column="RESOURCE_ID"/>
+        <result property="resourceType" column="RESOURCE_TYPE"/>
+        <result property="resourcePattern" column="RESOURCE_PATTERN"/>
+        <result property="httpMethod" column="HTTP_METHOD"/>
+        <result property="description" column="DESCRIPTION"/>
+        <result property="menuName" column="MENU_NAME"/>
+        <result property="menuUrl" column="MENU_URL"/>
+        <result property="iconName" column="ICON_NAME"/>
+        <result property="parentResourceId" column="PARENT_RESOURCE_ID"/>
+        <result property="displayOrder" column="DISPLAY_ORDER"/>
+        <result property="isGroup" column="IS_GROUP"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        RESOURCE_ID, RESOURCE_TYPE, RESOURCE_PATTERN, HTTP_METHOD, DESCRIPTION,
+        MENU_NAME, MENU_URL, ICON_NAME, PARENT_RESOURCE_ID, DISPLAY_ORDER, IS_GROUP
+    </sql>
+
+    <select id="findAllResources" resultMap="resourceResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM RESOURCES
+        ORDER BY DISPLAY_ORDER ASC, RESOURCE_ID ASC
+    </select>
+
+    <select id="findResourcesByRoleId" resultMap="resourceResultMap">
+        SELECT r.<include refid="baseColumns"/>
+        FROM RESOURCES r
+        JOIN ROLE_RESOURCE_MAPPINGS rrm ON r.RESOURCE_ID = rrm.RESOURCE_ID
+        WHERE rrm.ROLE_ID = #{roleId}
+        ORDER BY r.DISPLAY_ORDER ASC, r.RESOURCE_ID ASC
+    </select>
+
+    <select id="findResourceById" resultMap="resourceResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM RESOURCES
+        WHERE RESOURCE_ID = #{resourceId}
+    </select>
+
+    <select id="findResourceByPattern" resultMap="resourceResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM RESOURCES
+        WHERE RESOURCE_PATTERN = #{resourcePattern}
+    </select>
+
+    <insert id="insertResource" useGeneratedKeys="true" keyProperty="resourceId">
+        INSERT INTO RESOURCES (
+            RESOURCE_TYPE, RESOURCE_PATTERN, HTTP_METHOD, DESCRIPTION,
+            MENU_NAME, MENU_URL, ICON_NAME, PARENT_RESOURCE_ID, DISPLAY_ORDER, IS_GROUP
+        )
+        VALUES (
+            #{resourceType}, #{resourcePattern}, #{httpMethod}, #{description},
+            #{menuName}, #{menuUrl}, #{iconName}, #{parentResourceId}, #{displayOrder}, #{isGroup}
+        )
+    </insert>
+
+    <update id="updateResource">
+        UPDATE RESOURCES
+        SET
+            RESOURCE_TYPE = #{resourceType},
+            RESOURCE_PATTERN = #{resourcePattern},
+            HTTP_METHOD = #{httpMethod},
+            DESCRIPTION = #{description},
+            MENU_NAME = #{menuName},
+            MENU_URL = #{menuUrl},
+            ICON_NAME = #{iconName},
+            PARENT_RESOURCE_ID = #{parentResourceId},
+            DISPLAY_ORDER = #{displayOrder},
+            IS_GROUP = #{isGroup}
+        WHERE RESOURCE_ID = #{resourceId}
+    </update>
+
+    <delete id="deleteResource">
+        DELETE FROM RESOURCES
+        WHERE RESOURCE_ID = #{resourceId}
+    </delete>
+
+</mapper>

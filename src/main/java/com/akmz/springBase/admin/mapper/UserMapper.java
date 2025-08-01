@@ -8,4 +8,5 @@ import java.util.List;
 @Mapper
 public interface UserMapper {
     List<UserAdminViewResponse> findAll();
+    List<UserAdminViewResponse> findAllWithRoles();
 }

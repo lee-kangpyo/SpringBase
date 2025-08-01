@@ -3,7 +3,6 @@ spring:
     active: prod
   application:
     name: springBase
-
   datasource :
     url: jdbc:log4jdbc:h2:mem:testdb
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy

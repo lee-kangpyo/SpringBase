@@ -4,7 +4,6 @@
 
 -- Clean up existing data (optional, depending on test setup)
 -- DELETE FROM authorities;
--- DELETE FROM users;
 
 -- Insert test users
 INSERT INTO users (USER_NAME, PASSWORD, EMAIL, USE_YN, LOGIN_FAILURE_COUNT, LAST_FAILURE_TIMESTAMP) VALUES
@@ -13,8 +12,4 @@ INSERT INTO users (USER_NAME, PASSWORD, EMAIL, USE_YN, LOGIN_FAILURE_COUNT, LAST
     ('disabledUser', '$2a$12$Ju75hxXXA2D81vXxj3GWSOUf7YoliRdbX.RcNRGfEmFzz2UfDTzpa', 'disabled@example.com', 'N', 0, NULL);
 
 -- Insert authorities
-INSERT INTO authorities (USER_NAME, AUTHORITY) VALUES
-    ('user', 'ROLE_USER'),
-    ('user', 'ROLE_stu'),
-    ('admin', 'ROLE_ADMIN'),
-    ('disabledUser', 'ROLE_USER');
+

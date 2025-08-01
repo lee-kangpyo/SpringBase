@@ -1,6 +1,7 @@
 package com.akmz.springBase.auth.service;
 
-import com.akmz.springBase.auth.model.dto.GoogleLoginRequest;
+import com.akmz.springBase.admin.service.AdminService;
+import com.akmz.springBase.auth.model.dto.*;
 import com.akmz.springBase.common.config.JwtTokenProvider;
 import com.akmz.springBase.auth.exception.ExpiredResetTokenException;
 import com.akmz.springBase.auth.exception.InvalidRefreshTokenException;
@@ -10,9 +11,6 @@ import com.akmz.springBase.auth.mapper.AuthMapper;
 import com.akmz.springBase.auth.mapper.AuthTokenMapper;
 import com.akmz.springBase.notification.email.model.dto.EmailRequest;
 import com.akmz.springBase.notification.email.service.EmailService;
-import com.akmz.springBase.auth.model.dto.LoginRequest;
-import com.akmz.springBase.auth.model.dto.TokenResponse;
-import com.akmz.springBase.auth.model.dto.UserRegistrationRequest;
 import com.akmz.springBase.auth.model.entity.AuthToken;
 import com.akmz.springBase.auth.model.entity.AuthUser;
 import jakarta.mail.MessagingException;
@@ -31,6 +29,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.Comparator;
+
+import com.akmz.springBase.admin.mapper.ResourceMapper;
+import com.akmz.springBase.admin.mapper.UserRoleMapper;
+import com.akmz.springBase.admin.model.entity.Resource;
+import com.akmz.springBase.admin.model.entity.UserRole;
+import com.akmz.springBase.admin.model.dto.ResourceResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +50,9 @@ public class AuthService {
     private final AuthTokenMapper authTokenMapper;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final UserRoleMapper userRoleMapper;
+    private final ResourceMapper resourceMapper;
+    private final AdminService adminService;
 
     @Value("${app.base-url}")
     private String appBaseUrl;
@@ -109,16 +118,9 @@ public class AuthService {
         // 3. 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-        // 4. AuthUser 엔티티 생성
-        AuthUser newUser = new AuthUser();
-        newUser.setUserName(request.getUserName());
-        newUser.setEmail(request.getEmail());
-        newUser.setPassword(encodedPassword);
-        newUser.setUseYn("Y"); // 기본적으로 사용 가능으로 설정
-        newUser.setLoginFailureCount(0); // 로그인 실패 횟수 초기화
+        // 4. AuthUser 엔티티 생성 및 기본 권한 부여
+        createUserWithDefaultRole(request.getUserName(), request.getEmail(), encodedPassword, null, null);
 
-        // 5. 데이터베이스 저장
-        authMapper.save(newUser);
         log.info("새로운 사용자 등록 완료: {}", request.getEmail());
     }
 
@@ -328,29 +330,67 @@ public class AuthService {
         AuthUser authUser = authMapper.findByGoogleId(request.getGoogleId());
 
         if (authUser == null) {
-            // googleId로 사용자를 찾지 못한 경우, 새로운 사용자 생성
-            log.info("새로운 구글 사용자 등록: {}", request.getEmail());
-
-            AuthUser newUser = new AuthUser();
-            // userName은 이메일을 사용하거나, 필요에 따라 다른 고유한 값을 생성할 수 있습니다.
-            // 여기서는 이메일을 userName으로 사용합니다.
-            newUser.setUserName(request.getEmail());
-            newUser.setEmail(request.getEmail());
-            newUser.setGoogleId(request.getGoogleId());
-            // 소셜 로그인 사용자는 일반 비밀번호 로그인을 하지 않으므로,
-            // 예측 불가능한 안전한 임의의 값을 비밀번호로 설정합니다.
-            newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            newUser.setUseYn("Y"); // 기본적으로 사용 가능
-            newUser.setLoginFailureCount(0); // 로그인 실패 횟수 초기화
-            newUser.setRole("USER"); // 기본 역할 설정 (필요에 따라 변경)
-
-            authMapper.save(newUser);
-            authUser = newUser; // 새로 생성된 사용자로 설정
+            authUser = createSocialUser(request.getEmail(), request.getGoogleId(), "google");
         } else {
             log.info("기존 구글 사용자 로그인: {}", authUser.getEmail());
         }
 
         return issueAndSaveTokens(authUser.getUserName());
+    }
+
+
+    /**
+     * 네이버 로그인 처리: naverId로 사용자 조회 후 없으면 생성, 있으면 로그인 처리
+     * @param request NaverLoginRequest DTO (naverId, email, name 포함)
+     * @return JWT Access Token 및 Refresh Token
+     */
+    @Transactional
+    public TokenResponse processNaverLogin(NaverLoginRequest request) {
+        AuthUser authUser = authMapper.findByNaverId(request.getNaverId());
+
+        if (authUser == null) {
+            authUser = createSocialUser(request.getEmail(), request.getNaverId(), "naver");
+        } else {
+            log.info("기존 네이버 사용자 로그인: {}", authUser.getEmail());
+        }
+
+        return issueAndSaveTokens(authUser.getUserName());
+    }
+
+
+    private AuthUser createUserWithDefaultRole(String userName, String email, String encodedPassword, String googleId, String naverId) {
+        AuthUser newUser = new AuthUser();
+        newUser.setUserName(userName);
+        newUser.setEmail(email);
+        newUser.setPassword(encodedPassword);
+        newUser.setGoogleId(googleId);
+        newUser.setNaverId(naverId);
+        newUser.setUseYn("Y");
+        newUser.setLoginFailureCount(0);
+
+        authMapper.save(newUser);
+
+        UserRole defaultUserRole = new UserRole();
+        defaultUserRole.setUserName(newUser.getUserName());
+        defaultUserRole.setRoleId(2L); // ROLE_USER의 ID
+        userRoleMapper.insertUserRole(defaultUserRole);
+
+        return newUser;
+    }
+
+    private AuthUser createSocialUser(String email, String socialId, String socialType) {
+        log.info("새로운 {} 사용자 등록: {}", socialType, email);
+
+        String userName = email != null && !email.isEmpty() ? email : socialId;
+        String encodedPassword = passwordEncoder.encode(UUID.randomUUID().toString()); // 임의 비밀번호 생성
+
+        AuthUser newUser;
+        if ("google".equals(socialType)) {
+            newUser = createUserWithDefaultRole(userName, email, encodedPassword, socialId, null);
+        } else { // naver
+            newUser = createUserWithDefaultRole(userName, email, encodedPassword, null, socialId);
+        }
+        return newUser;
     }
 
     /**
@@ -361,18 +401,22 @@ public class AuthService {
      */
     private TokenResponse issueAndSaveTokens(String username) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        List<String> authorities = userDetails.getAuthorities().stream()
+        List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority).toList();
 
-        String accessToken = jwtTokenProvider.createToken(userDetails.getUsername(), authorities);
+        String accessToken = jwtTokenProvider.createToken(userDetails.getUsername(), roles);
         String refreshToken = jwtTokenProvider.createRefreshToken(userDetails.getUsername());
 
         saveRefreshToken(userDetails.getUsername(), refreshToken);
+
+        // menuItems를 AdminService를 통해 가져옵니다.
+        List<ResourceResponse> menuItems = adminService.getAllMenuResources();
 
         return TokenResponse.builder()
                 .userName(userDetails.getUsername())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .menuItems(menuItems) // 메뉴 아이템 추가
                 .build();
     }
 }

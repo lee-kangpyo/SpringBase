@@ -1,6 +1,10 @@
 package com.akmz.springBase.auth.service;
 
 import com.akmz.springBase.auth.mapper.AuthMapper;
+import com.akmz.springBase.admin.mapper.UserRoleMapper; // Added
+import com.akmz.springBase.admin.mapper.RoleMapper; // Added
+import com.akmz.springBase.admin.model.entity.UserRole; // Added
+import com.akmz.springBase.admin.model.entity.Role; // Added
 import com.akmz.springBase.auth.model.entity.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,6 +23,8 @@ import java.util.stream.Collectors;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final AuthMapper authMapper;
+    private final UserRoleMapper userRoleMapper; // Injected
+    private final RoleMapper roleMapper; // Injected
 
     // 잠금 시간 설정
     private static final long LOCK_TIME_MILLIS = 30 * 60 * 1000; // 30분
@@ -63,18 +69,17 @@ public class CustomUserDetailsService implements UserDetailsService {
             }
         }
 
-        // 권한 목록을 별도 쿼리로 가져오기
-        List<String> roles = authMapper.getAuthoritiesByUsername(username);
-
-        if (roles == null || roles.isEmpty()) {
-            // 권한이 없으면 기본 ROLE_USER 부여 (필요에 따라 조정)
-            roles = Collections.singletonList("ROLE_USER");
-        }
-
-        // String 리스트를 SimpleGrantedAuthority 리스트로 변환
-        List<GrantedAuthority> authorities = roles.stream()
-                .map(SimpleGrantedAuthority::new)
+        // 권한 목록을 USER_ROLES 및 ROLES 테이블에서 가져오기
+        List<UserRole> userRoles = userRoleMapper.findUserRolesByUserName(username);
+        List<GrantedAuthority> authorities = userRoles.stream()
+                .map(userRole -> roleMapper.findRoleById(userRole.getRoleId()))
+                .map(role -> new SimpleGrantedAuthority(role.getRoleName()))
                 .collect(Collectors.toList());
+
+        if (authorities.isEmpty()) {
+            // 권한이 없으면 기본 ROLE_USER 부여 (필요에 따라 조정)
+            authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        }
 
         return new org.springframework.security.core.userdetails.User(
                 authUser.getUserName(),

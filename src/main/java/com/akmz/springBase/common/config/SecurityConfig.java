@@ -36,7 +36,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", // 스웨거
                                 "/api/auth/validate-reset-token", "/api/auth/token/reissue", "/api/auth/password/reset/**",  // 비밀번호 재설정
-                                "/api/auth/login", "/api/auth/register", "/css/**", "/js/**", "/h2-console/**").permitAll()
+                                "/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/naver", // 구글, 네이버 로그인 추가
+                                "/css/**", "/js/**", "/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers

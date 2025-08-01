@@ -92,14 +92,14 @@ Configuration:
 
       - name: jdbc.audit # 상세 감사 로그
         additivity: false
-        level: WARN
+        level: ERROR
         AppenderRef:
           - ref: Console_Appender
           - ref: RollingFile_Appender
 
       - name: jdbc.resultset # ResultSet 상세 처리 (getString 등)
         additivity: false
-        level: WARN
+        level: ERROR
         AppenderRef:
           - ref: Console_Appender
           - ref: RollingFile_Appender

@@ -16,11 +16,14 @@
         LAST_FAILURE_TIMESTAMP = NULL
         <include refid="whereCondition" />
     </sql>
+
     <!-- AuthUser 엔티티의 모든 컬럼을 포함하는 SQL 조각 -->
     <sql id="authUserColumns">
         USER_NAME AS userName,
         PASSWORD AS password,
         EMAIL AS email, <!-- EMAIL 컬럼 추가 -->
+        GOOGLE_ID AS googleId, <!-- GOOGLE_ID 컬럼 추가 -->
+        NAVER_ID AS naverId, <!-- NAVER_ID 컬럼 추가 -->
         REFRESH_TOKEN AS refreshToken,
         USE_YN AS useYn,
         LOGIN_FAILURE_COUNT AS loginFailureCount,
@@ -34,12 +37,7 @@
             <include refid="whereCondition" />
     </select>
 
-    <select id="getAuthoritiesByUsername" resultType="String">
-            -- 권한을 가져오기
-            SELECT AUTHORITY
-            FROM <include refid="BASE.authorityTable"/>
-            <include refid="whereCondition" />
-    </select>
+    
     <select id="getEmailAddr" resultType="java.lang.String">
         SELECT EMAIL
         FROM <include refid="BASE.emailTable" />
@@ -97,14 +95,37 @@
             USER_NAME,
             PASSWORD,
             EMAIL,
+            GOOGLE_ID, <!-- GOOGLE_ID 컬럼 추가 -->
+            NAVER_ID, <!-- NAVER_ID 컬럼 추가 -->
             USE_YN,
             LOGIN_FAILURE_COUNT
         ) VALUES (
             #{userName},
             #{password},
             #{email},
+            #{googleId}, <!-- googleId 값 추가 -->
+            #{naverId}, <!-- naverId 값 추가 -->
             'Y', -- 기본값으로 'Y' 설정
             0    -- 기본값으로 0 설정
         )
     </insert>
+
+    <select id="findByGoogleId" resultType="AuthUser">
+        SELECT <include refid="authUserColumns"/>
+        FROM <include refid="BASE.userTable"/>
+        WHERE GOOGLE_ID = #{googleId}
+    </select>
+
+    <select id="findByNaverId" resultType="AuthUser">
+        SELECT <include refid="authUserColumns"/>
+        FROM <include refid="BASE.userTable"/>
+        WHERE NAVER_ID = #{naverId}
+    </select>
+
+    <update id="updateUserUseYn">
+        UPDATE <include refid="BASE.userTable"/>
+        SET USE_YN = #{useYn}
+        WHERE USER_NAME = #{userName}
+    </update>
+
 </mapper>

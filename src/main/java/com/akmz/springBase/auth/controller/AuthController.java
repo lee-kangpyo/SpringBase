@@ -157,6 +157,40 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/naver")
+    @Operation(
+            summary = "네이버 로그인 API",
+            description = "네이버 계정 정보를 받아서 인증 후 JWT Access Token과 Refresh Token을 생성하여 반환한다. 인증이 필요하지 않음",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "로그인 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+                @ApiResponse(responseCode = "400", description = "잘못된 요청 - 입력값 검증 실패"),
+                @ApiResponse(responseCode = "500", description = "서버 오류")
+            }
+    )
+    public ResponseEntity<?> naverLogin(@Valid @RequestBody NaverLoginRequest request) {
+        log.info("Naver login request for email: {}", request.getEmail());
+        try {
+            TokenResponse tokenResponse = authService.processNaverLogin(request);
+
+            ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
+                    .httpOnly(true)
+                    .secure("PROD".equals(MODE))
+                    .maxAge(refreshExpiration / 1000)
+                    .sameSite("Lax")
+                    .path("/")
+                    .build();
+            // 쿠키에 포함한 리프레쉬 토큰 제거
+            tokenResponse.setRefreshToken(null);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, token.toString())
+                    .body(tokenResponse);
+        } catch (Exception e) {
+            log.error("Naver login failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("네이버 로그인 처리 중 오류가 발생했습니다.");
+        }
+    }
+
     @PostMapping("/logout")
     @Operation(
             summary = "로그아웃 API",

@@ -10,7 +10,7 @@ import java.util.List;
 public interface AuthMapper {
     AuthUser findByUsername(@Param("userName") String userName);
 
-    List<String> getAuthoritiesByUsername(String username);
+    
 
     void updateRefreshToken(AuthUser authUser);
 
@@ -27,4 +27,9 @@ public interface AuthMapper {
     void save(AuthUser authUser);
 
     AuthUser findByGoogleId(@Param("googleId") String googleId);
+
+    
+
+    AuthUser findByNaverId(@Param("naverId") String naverId);
+    void updateUserUseYn(@Param("userName") String userName, @Param("useYn") String useYn);
 }

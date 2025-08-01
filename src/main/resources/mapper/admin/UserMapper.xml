@@ -18,4 +18,31 @@
             <include refid="BASE.userTable"/>
     </select>
 
+    <resultMap id="userAdminResultMap" type="com.akmz.springBase.admin.model.dto.UserAdminViewResponse">
+        <id property="userName" column="userName"/>
+        <result property="email" column="email"/>
+        <result property="useYn" column="useYn"/>
+        <result property="loginFailureCount" column="loginFailureCount"/>
+        <result property="lastFailureTimestamp" column="lastFailureTimestamp"/>
+        <collection property="roles" ofType="java.lang.String">
+            <result column="role"/>
+        </collection>
+    </resultMap>
+
+    <select id="findAllWithRoles" resultMap="userAdminResultMap">
+        SELECT
+            u.USER_NAME            AS userName,
+            u.EMAIL                AS email,
+            u.USE_YN               AS useYn,
+            u.LOGIN_FAILURE_COUNT  AS loginFailureCount,
+            u.LAST_FAILURE_TIMESTAMP AS lastFailureTimestamp,
+            r.ROLE_NAME            AS role
+        FROM
+            users u
+        LEFT JOIN
+            user_roles ur ON u.USER_NAME = ur.USER_NAME
+        LEFT JOIN
+            roles r ON ur.ROLE_ID = r.ROLE_ID
+    </select>
+
 </mapper>
