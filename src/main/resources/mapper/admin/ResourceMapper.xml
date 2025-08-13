@@ -79,4 +79,15 @@
         WHERE RESOURCE_ID = #{resourceId}
     </delete>
 
+    <select id="findMenuResourcesByRoleIds" resultMap="resourceResultMap">
+        SELECT DISTINCT r.*
+        FROM RESOURCES r
+        JOIN ROLE_RESOURCE_MAPPINGS rrm ON r.RESOURCE_ID = rrm.RESOURCE_ID
+        WHERE r.RESOURCE_TYPE = 'MENU_ITEM'
+          AND rrm.ROLE_ID IN
+            <foreach item="roleId" collection="roleIds" open="(" separator="," close=")">
+                #{roleId}
+            </foreach>
+        ORDER BY r.DISPLAY_ORDER ASC, r.RESOURCE_ID ASC
+    </select>
 </mapper>

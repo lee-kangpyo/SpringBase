@@ -2,6 +2,8 @@ package com.akmz.springBase.admin.mapper;
 
 import com.akmz.springBase.admin.model.entity.Resource;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
 import java.util.List;
 
 @Mapper
@@ -13,4 +15,5 @@ public interface ResourceMapper {
     void insertResource(Resource resource);
     void updateResource(Resource resource);
     void deleteResource(Long resourceId);
+    List<Resource> findMenuResourcesByRoleIds(@Param("roleIds") List<Long> roleIds);
 }

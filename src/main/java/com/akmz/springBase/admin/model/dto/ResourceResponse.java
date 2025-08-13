@@ -2,9 +2,15 @@ package com.akmz.springBase.admin.model.dto;
 
 import com.akmz.springBase.admin.model.entity.Resource;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "리소스 응답 DTO")
 public class ResourceResponse {
     @Schema(description = "리소스 ID", example = "1")
@@ -33,18 +39,18 @@ public class ResourceResponse {
     private Boolean isGroup;
 
     public static ResourceResponse fromEntity(Resource resource) {
-        ResourceResponse response = new ResourceResponse();
-        response.setResourceId(resource.getResourceId());
-        response.setResourceType(resource.getResourceType());
-        response.setResourcePattern(resource.getResourcePattern());
-        response.setHttpMethod(resource.getHttpMethod());
-        response.setDescription(resource.getDescription());
-        response.setMenuName(resource.getMenuName());
-        response.setMenuUrl(resource.getMenuUrl());
-        response.setIconName(resource.getIconName());
-        response.setParentResourceId(resource.getParentResourceId());
-        response.setDisplayOrder(resource.getDisplayOrder());
-        response.setIsGroup(resource.getIsGroup());
-        return response;
+        return ResourceResponse.builder()
+                .resourceId(resource.getResourceId())
+                .resourceType(resource.getResourceType())
+                .resourcePattern(resource.getResourcePattern())
+                .httpMethod(resource.getHttpMethod())
+                .description(resource.getDescription())
+                .menuName(resource.getMenuName())
+                .menuUrl(resource.getMenuUrl())
+                .iconName(resource.getIconName())
+                .parentResourceId(resource.getParentResourceId())
+                .displayOrder(resource.getDisplayOrder())
+                .isGroup(resource.getIsGroup())
+                .build();
     }
 }
