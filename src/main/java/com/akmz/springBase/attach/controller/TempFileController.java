@@ -30,7 +30,7 @@ public class TempFileController {
     private final FtpService ftpService;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "임시 파일 업로드", description = "파일을 FTP 서버의 임시 디렉토리에 업로드하고 경로를 반환합니다. DB에 기록되지 않습니다.")
+    @Operation(summary = "[POST] 임시 파일 업로드", description = "파일을 FTP 서버의 임시 디렉토리에 업로드하고 경로를 반환합니다. DB에 기록되지 않습니다.")
     @ApiResponse(responseCode = "200", description = "파일 업로드 성공", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json", schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = TempFileResponse.class)))
     @ApiResponse(responseCode = "400", description = "잘못된 요청 (예: 파일 없음)", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json", schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = TempFileResponse.class)))
     @ApiResponse(responseCode = "500", description = "서버 내부 오류 (예: FTP 업로드 실패)", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json", schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = TempFileResponse.class)))

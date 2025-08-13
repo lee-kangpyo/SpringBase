@@ -22,7 +22,7 @@ public class MenuController {
 
     private final MenuService menuService;
 
-    @Operation(summary = "현재 사용자 메뉴 조회", description = "로그인한 사용자의 역할에 따라 접근 가능한 메뉴 목록을 계층 구조로 조회합니다.")
+    @Operation(summary = "[GET] 현재 사용자 메뉴 조회", description = "로그인한 사용자의 역할에 따라 접근 가능한 메뉴 목록을 계층 구조로 조회합니다.")
     @GetMapping
     public ResponseEntity<List<MenuResponse>> getMenusForCurrentUser(Principal principal) {
         List<MenuResponse> menus = menuService.getMenusForCurrentUser(principal.getName());

@@ -6,14 +6,12 @@ import com.akmz.springBase.auth.exception.InvalidResetTokenException;
 import com.akmz.springBase.auth.exception.RefreshTokenMismatchException;
 import com.akmz.springBase.auth.model.dto.*;
 import com.akmz.springBase.auth.service.AuthService;
-import com.akmz.springBase.auth.service.AuthService;
 import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -49,7 +47,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(
-            summary = "로그인 API",
+            summary = "[POST] 로그인 API",
             description = "사용자 인증 정보를 받아서 인증 후 JWT Access Token과 Refresh Token을 생성하여 반환한다. 인증이 필요하지 않음",
             responses = {
                 @ApiResponse(responseCode = "200", description = "로그인 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
@@ -101,7 +99,7 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(
-            summary = "회원가입 API",
+            summary = "[POST] 회원가입 API",
             description = "사용자 정보를 받아서 회원가입을 처리한다.",
             responses = {
                 @ApiResponse(responseCode = "200", description = "회원가입 성공", content = @Content(schema = @Schema(implementation = String.class))),
@@ -125,7 +123,7 @@ public class AuthController {
 
     @PostMapping("/google")
     @Operation(
-            summary = "구글 로그인 API",
+            summary = "[POST] 구글 로그인 API",
             description = "구글 계정 정보를 받아서 인증 후 JWT Access Token과 Refresh Token을 생성하여 반환한다. 인증이 필요하지 않음",
             responses = {
                 @ApiResponse(responseCode = "200", description = "로그인 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
@@ -159,7 +157,7 @@ public class AuthController {
 
     @PostMapping("/naver")
     @Operation(
-            summary = "네이버 로그인 API",
+            summary = "[POST] 네이버 로그인 API",
             description = "네이버 계정 정보를 받아서 인증 후 JWT Access Token과 Refresh Token을 생성하여 반환한다. 인증이 필요하지 않음",
             responses = {
                 @ApiResponse(responseCode = "200", description = "로그인 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
@@ -193,7 +191,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(
-            summary = "로그아웃 API",
+            summary = "[POST] 로그아웃 API",
             description = "db에 저장되어있는 Refresh Token을 삭제한다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "로그아웃 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
@@ -207,7 +205,7 @@ public class AuthController {
 
     @PostMapping("/token/reissue")
     @Operation(
-            summary = "토큰 재발급",
+            summary = "[POST] 토큰 재발급",
             description = "represh token 으로 access token을 재발급한다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "발급 성공", content = @Content(schema = @Schema(implementation = TokenResponse.class))),
@@ -243,7 +241,7 @@ public class AuthController {
 
     @PostMapping("/password/reset/request")
     @Operation(
-            summary = "비밀번호 재설정 요청",
+            summary = "[POST] 비밀번호 재설정 요청",
             description = "사용자 이메일로 비밀번호 재설정 링크를 전송한다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "비밀번호 재설정 이메일 전송 성공"),
@@ -276,7 +274,7 @@ public class AuthController {
 
     @GetMapping("/validate-reset-token")
     @Operation(
-            summary = "비밀번호 재설정 토큰 유효성 검증",
+            summary = "[GET] 비밀번호 재설정 토큰 유효성 검증",
             description = "비밀번호 재설정 페이지에 진입했을 때, URL의 토큰이 유효한지 사전에 검증한다.",
             parameters = {
                     @Parameter(name = "token", description = "이메일로 발송된 비밀번호 재설정 토큰", required = true)
@@ -300,7 +298,7 @@ public class AuthController {
 
     @PostMapping("/password/reset/confirm")
     @Operation(
-            summary = "비밀번호 재설정 확인",
+            summary = "[POST] 비밀번호 재설정 확인",
             description = "재설정 토큰과 새 비밀번호를 받아 비밀번호를 업데이트한다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "비밀번호 재설정 성공"),
@@ -329,7 +327,7 @@ public class AuthController {
 
     @GetMapping("/helloWord/{path}")
     @Operation(
-            summary = "테스트용 인증 필요 API",
+            summary = "[GET] 테스트용 인증 필요 API",
             description = "JWT 인증이 필요한 API로, Swagger 문서에 자물쇠(보안 요구사항) 표시가 된다."
     )
     //@SecurityRequirement(name = "bearerAuth")

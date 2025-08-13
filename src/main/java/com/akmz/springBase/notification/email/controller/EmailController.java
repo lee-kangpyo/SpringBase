@@ -26,7 +26,7 @@ public class EmailController {
 
     private final EmailService emailService;
 
-    @Operation(summary = "이메일 전송", description = "지정된 수신자에게 이메일을 전송합니다. 첨부파일 URL 또는 byte[]를 포함할 수 있습니다.")
+    @Operation(summary = "[POST] 이메일 전송", description = "지정된 수신자에게 이메일을 전송합니다. 첨부파일 URL 또는 byte[]를 포함할 수 있습니다.")
     @ApiResponse(responseCode = "200", description = "이메일 전송 성공")
     @ApiResponse(responseCode = "500", description = "이메일 전송 실패")
     @PostMapping("/send")

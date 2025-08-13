@@ -65,11 +65,11 @@ FTP_TEMP_FILE_EXPIRATION_HOURS=1 # 만료일 1시간 마다 clean up
 ### 3. API 문서 확인
 
 애플리케이션 실행 후, 아래 주소에서 API 문서를 확인할 수 있습니다.
--   [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+-   [api 문서 바로가기](http://localhost:8080/swagger-ui/index.html)
 
 ## 📝 API 엔드포인트 개요
 
--   `/api/auth/**`: 로그인, 회원가입 등 사용자 인증 관련 API
+**-   `/api/auth/**`:** 로그인, 회원가입 등 사용자 인증 관련 API
 -   `/api/menu/**`: 현재 로그인한 사용자의 역할에 맞는 메뉴 조회 API
 -   `/api/admin/**`: 사용자, 역할, 리소스 관리 등 관리자 기능 API
 -   `/api/attach/**`: 파일 업로드, 다운로드 등 첨부파일 관리 API
