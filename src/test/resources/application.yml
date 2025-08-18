@@ -2,15 +2,15 @@
 spring:
   sql:
     init:
-      mode: always
+      mode: never
   profiles:
     active: local
   application:
     name: springBase
   datasource:
-    schema: classpath:schema.sql
-    data: classpath:data.sql
-    initialization-mode: always
+    #    schema: classpath:schema.sql
+    #    data: classpath:data.sql
+    initialization-mode: never
     #    url: jdbc:h2:mem:testdb
     #    driver-class-name: org.h2.Driver
     # url: jdbc:log4jdbc:mysql://localhost:3306/mydb # 예시: MySQL 데이터베이스 사용 시
