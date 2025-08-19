@@ -8,6 +8,8 @@ import lombok.Data;
 public class MenuResourceRequest {
     @Schema(description = "리소스 고유 키/패턴 (예: /admin/dashboard)", example = "/admin/dashboard", required = true)
     private String resourcePattern;
+    @Schema(description = "HTTP 메소드 (API_ENDPOINT 타입일 경우만 해당)", example = "GET")
+    private String httpMethod;
     @Schema(description = "리소스 설명", example = "관리자 대시보드 메뉴")
     private String description;
     @Schema(description = "메뉴 표시 이름 (예: 사용자 관리)", example = "대시보드", required = true)
@@ -22,4 +24,6 @@ public class MenuResourceRequest {
     private Integer displayOrder;
     @Schema(description = "그룹 메뉴 여부 (하위 메뉴를 가질 수 있음)", example = "false")
     private Boolean isGroup;
+    @Schema(description = "사용 여부 (Y: 사용, N: 미사용)", example = "Y")
+    private String useYn;
 }

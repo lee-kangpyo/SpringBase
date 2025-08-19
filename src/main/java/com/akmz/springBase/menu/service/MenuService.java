@@ -40,6 +40,11 @@ public class MenuService {
         return buildMenuTree(accessibleMenus);
     }
 
+    public List<MenuResponse> getMenusForRoles (List<Long> roleIds) {
+        List<Resource> accessibleMenus = resourceMapper.findMenuResourcesByRoleIds(roleIds);
+        return buildMenuTree(accessibleMenus);
+    }
+
     private List<MenuResponse> buildMenuTree(List<Resource> resources) {
         // 순서 보장을 위해 LinkedHashMap 사용
         Map<Long, MenuResponse> menuMap = resources.stream()

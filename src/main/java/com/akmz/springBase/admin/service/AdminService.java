@@ -91,6 +91,8 @@ public class AdminService {
         resource.setParentResourceId(request.getParentResourceId());
         resource.setDisplayOrder(request.getDisplayOrder());
         resource.setIsGroup(request.getIsGroup());
+        resource.setHttpMethod(request.getHttpMethod()); // Added
+        resource.setUseYn(request.getUseYn() != null ? request.getUseYn() : "Y"); // Added with default
         resourceMapper.insertResource(resource);
         return ResourceResponse.fromEntity(resource);
     }
@@ -109,6 +111,8 @@ public class AdminService {
         resource.setParentResourceId(request.getParentResourceId());
         resource.setDisplayOrder(request.getDisplayOrder());
         resource.setIsGroup(request.getIsGroup());
+        resource.setHttpMethod(request.getHttpMethod()); // Added
+        resource.setUseYn(request.getUseYn()); // Added
         resourceMapper.updateResource(resource);
         return ResourceResponse.fromEntity(resource);
     }

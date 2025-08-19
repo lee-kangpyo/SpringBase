@@ -14,11 +14,12 @@
         <result property="parentResourceId" column="PARENT_RESOURCE_ID"/>
         <result property="displayOrder" column="DISPLAY_ORDER"/>
         <result property="isGroup" column="IS_GROUP"/>
+        <result property="useYn" column="USE_YN"/>
     </resultMap>
 
     <sql id="baseColumns">
         RESOURCE_ID, RESOURCE_TYPE, RESOURCE_PATTERN, HTTP_METHOD, DESCRIPTION,
-        MENU_NAME, MENU_URL, ICON_NAME, PARENT_RESOURCE_ID, DISPLAY_ORDER, IS_GROUP
+        MENU_NAME, MENU_URL, ICON_NAME, PARENT_RESOURCE_ID, DISPLAY_ORDER, IS_GROUP, USE_YN
     </sql>
 
     <select id="findAllResources" resultMap="resourceResultMap">
@@ -50,11 +51,11 @@
     <insert id="insertResource" useGeneratedKeys="true" keyProperty="resourceId">
         INSERT INTO RESOURCES (
             RESOURCE_TYPE, RESOURCE_PATTERN, HTTP_METHOD, DESCRIPTION,
-            MENU_NAME, MENU_URL, ICON_NAME, PARENT_RESOURCE_ID, DISPLAY_ORDER, IS_GROUP
+            MENU_NAME, MENU_URL, ICON_NAME, PARENT_RESOURCE_ID, DISPLAY_ORDER, IS_GROUP, USE_YN
         )
         VALUES (
             #{resourceType}, #{resourcePattern}, #{httpMethod}, #{description},
-            #{menuName}, #{menuUrl}, #{iconName}, #{parentResourceId}, #{displayOrder}, #{isGroup}
+            #{menuName}, #{menuUrl}, #{iconName}, #{parentResourceId}, #{displayOrder}, #{isGroup}, #{useYn}
         )
     </insert>
 
@@ -70,7 +71,8 @@
             ICON_NAME = #{iconName},
             PARENT_RESOURCE_ID = #{parentResourceId},
             DISPLAY_ORDER = #{displayOrder},
-            IS_GROUP = #{isGroup}
+            IS_GROUP = #{isGroup},
+            USE_YN = #{useYn}
         WHERE RESOURCE_ID = #{resourceId}
     </update>
 
@@ -84,6 +86,7 @@
         FROM RESOURCES r
         JOIN ROLE_RESOURCE_MAPPINGS rrm ON r.RESOURCE_ID = rrm.RESOURCE_ID
         WHERE r.RESOURCE_TYPE = 'MENU_ITEM'
+          AND r.USE_YN = 'Y'
           AND rrm.ROLE_ID IN
             <foreach item="roleId" collection="roleIds" open="(" separator="," close=")">
                 #{roleId}

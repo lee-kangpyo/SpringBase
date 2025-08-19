@@ -17,4 +17,5 @@ public class Resource {
     private Long parentResourceId;
     private Integer displayOrder;
     private Boolean isGroup;
+    private String useYn;
 }

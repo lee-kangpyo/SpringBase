@@ -34,7 +34,8 @@ CREATE TABLE RESOURCES (
     ICON_NAME VARCHAR(100) COMMENT '메뉴 아이콘 이름 (예: FaUserCog, Dashboard)',
     PARENT_RESOURCE_ID BIGINT COMMENT '부모 메뉴의 RESOURCE_ID (그룹 메뉴용)',
     DISPLAY_ORDER INT DEFAULT 0 COMMENT '메뉴 표시 순서',
-    IS_GROUP BOOLEAN DEFAULT FALSE COMMENT '그룹 메뉴 여부 (하위 메뉴를 가질 수 있음)'
+    IS_GROUP BOOLEAN DEFAULT FALSE COMMENT '그룹 메뉴 여부 (하위 메뉴를 가질 수 있음)',
+    USE_YN CHAR(1) DEFAULT 'Y' NOT NULL COMMENT '사용 여부 (Y: 사용, N: 미사용)'
 );
 
 -- ROLE_RESOURCE_MAPPINGS 테이블 생성 (권한-리소스 매핑)

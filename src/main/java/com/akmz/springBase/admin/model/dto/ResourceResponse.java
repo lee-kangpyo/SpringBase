@@ -37,6 +37,8 @@ public class ResourceResponse {
     private Integer displayOrder;
     @Schema(description = "그룹 메뉴 여부 (하위 메뉴를 가질 수 있음)", example = "false")
     private Boolean isGroup;
+    @Schema(description = "사용 여부 (Y: 사용, N: 미사용)", example = "Y")
+    private String useYn;
 
     public static ResourceResponse fromEntity(Resource resource) {
         return ResourceResponse.builder()
@@ -51,6 +53,7 @@ public class ResourceResponse {
                 .parentResourceId(resource.getParentResourceId())
                 .displayOrder(resource.getDisplayOrder())
                 .isGroup(resource.getIsGroup())
+                .useYn(resource.getUseYn()) // Added
                 .build();
     }
 }
