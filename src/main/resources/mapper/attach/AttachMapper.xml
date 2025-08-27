@@ -2,9 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.akmz.springBase.attach.mapper.AttachMapper">
 
-    <insert id="insertAttach" useGeneratedKeys="true" keyProperty="attachId">
-        INSERT INTO <include refid="BASE.attachTable"/> (ATTACH_NAME, CREATOR_ID, CREATED_AT)
-        VALUES (#{attachName}, #{creatorId}, NOW())
+        <insert id="insertAttach" keyProperty="attachId">
+        <selectKey keyProperty="attachId" resultType="long" order="BEFORE">
+            SELECT attach_seq.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO <include refid="BASE.attachTable"/> (ATTACH_ID, ATTACH_NAME, CREATOR_ID, CREATED_AT)
+        VALUES (#{attachId}, #{attachName}, #{creatorId}, SYSDATE)
     </insert>
 
     <insert id="insertAttachFile">
@@ -32,7 +35,7 @@
         UPDATE <include refid="BASE.attachFileTable"/>
         SET
             STATUS = 'DELETED',
-            DELETED_AT = NOW()
+            DELETED_AT = SYSDATE
         WHERE FILE_ID = #{fileId}
           AND STATUS = 'AVAILABLE'
     </update>
@@ -41,7 +44,7 @@
         UPDATE <include refid="BASE.attachFileTable"/>
         SET
             STATUS = 'DELETED',
-            DELETED_AT = NOW()
+            DELETED_AT = SYSDATE
         WHERE ATTACH_ID = #{attachId}
           AND STATUS = 'AVAILABLE'
     </update>

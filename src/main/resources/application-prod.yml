@@ -1,60 +1,40 @@
+# 'prod' 프로파일 전용 설정
 spring:
-  profiles:
-    active: prod
-  application:
-    name: springBase
-  datasource :
+  datasource:
+    # TODO: 운영용 Oracle 데이터베이스 연결 정보를 여기에 설정하세요
+    # url: jdbc:log4jdbc:oracle:thin:@<YOUR_ORACLE_HOST>:<PORT>:<SID>
+    # driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    # username: ${ORACLE_USERNAME}
+    # password: ${ORACLE_PASSWORD}
+    #
+    # 현재는 H2를 임시로 사용
     url: jdbc:log4jdbc:h2:mem:testdb
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
     username: sa
     password:
-  h2:
-    console:
-      enabled: true        # H2 웹 콘솔 사용 허용
-      path: /h2-console    # 콘솔 접속 경로 (기본값)
-  thymeleaf:
-    cache: false           # 템플릿 캐시 끄기 (개발용)
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${EMAIL_ID}
-    password: ${EMAIL_PW}
+  jpa:
+    hibernate:
+      # 운영 환경에서는 스키마를 변경하지 않고, 엔티티와 일치하는지 검증만 함
+      ddl-auto: validate
     properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-  servlet:
-    multipart:
-      enabled: true
-      max-file-size: 10MB
-      max-request-size: 100MB
-app:
-  base-url: http://localhost:3000 # 애플리케이션 기본 URL (비밀번호 재설정 링크 생성용)
-mybatis:
-  mapper-locations: classpath:mapper/**/*.xml
-  type-aliases-package: com.akmz.springBase
-  configuration:
-    mapUnderscoreToCamelCase: true
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect # Oracle용 방언 설정
 
+# PageHelper 페이징 라이브러리 Oracle용 설정
 pagehelper:
-  helperDialect: h2
+  helperDialect: oracle
   reasonable: true
   supportMethodsArguments: true
   params: count=countSql
 
-jwt:
-  secret: ${JWT_SECRET_KEY}
-  expiration: 3600000 # 1시간
-  refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)
-
-ftp:
-  host: ${FTP_HOST}
-  port: ${FTP_PORT}
-  username: ${FTP_USERNAME}
-  password: ${FTP_PASSWORD}
-  remote-base-dir: ${FTP_REMOTE_BASE_DIR:/}
-
+# 운영 환경용 로깅 설정
 logging:
   config: classpath:config/log/log4j2-prod.yml
 
+# 운영 환경에서는 보안을 위해 상세한 예외 메시지 비활성화
 debug:
   include-exception-details: false
+
+app:
+  cookie:
+    secure: true # 운영 https 환경용 쿠키 설정

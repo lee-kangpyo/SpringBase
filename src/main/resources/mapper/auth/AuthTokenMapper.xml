@@ -20,7 +20,7 @@
         UPDATE
             <include refid="BASE.authTokenTable"/>
         SET
-            USED = TRUE
+            USED = 1
         WHERE
             TOKEN = #{token}
     </update>
@@ -29,25 +29,27 @@
         UPDATE
             <include refid="BASE.authTokenTable"/>
         SET
-            USED = TRUE
+            USED = 1
         WHERE
             USER_NAME = #{userName}
             AND TOKEN_TYPE = #{tokenType}
-            AND USED = FALSE
-            AND EXPIRY_DATE > NOW() -- 만료되지 않은 토큰만 무효화
+            AND USED = 0
+            AND EXPIRY_DATE > SYSDATE -- 만료되지 않은 토큰만 무효화
     </update>
 
     <select id="findLatestTokenByUserNameAndType" resultType="com.akmz.springBase.auth.model.entity.AuthToken">
-        SELECT
-            ID, TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED
-        FROM
-            <include refid="BASE.authTokenTable"/>
-        WHERE
-            USER_NAME = #{userName}
-            AND TOKEN_TYPE = #{tokenType}
-        ORDER BY
-            CREATED_DATE DESC
-        LIMIT 1
+        SELECT * FROM (
+            SELECT
+                ID, TOKEN, USER_NAME, TOKEN_TYPE, EXPIRY_DATE, CREATED_DATE, USED
+            FROM
+                <include refid="BASE.authTokenTable"/>
+            WHERE
+                USER_NAME = #{userName}
+                AND TOKEN_TYPE = #{tokenType}
+            ORDER BY
+                CREATED_DATE DESC
+        )
+        WHERE ROWNUM = 1
     </select>
 
 </mapper>

@@ -1,64 +1,52 @@
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
 spring:
+  mandatory-file-encoding: UTF-8
   profiles:
-    active: local
+    active: local # 기본 프로파일을 'local'로 지정
   application:
     name: springBase
-  datasource:
-    #    url: jdbc:h2:mem:testdb
-    #    driver-class-name: org.h2.Driver
-    # url: jdbc:log4jdbc:mysql://localhost:3306/mydb # 예시: MySQL 데이터베이스 사용 시
-    # url: jdbc:log4jdbc:oracle:thin:@localhost:1521:xe # 예시: Oracle 데이터베이스 사용 시
-    url: jdbc:log4jdbc:h2:mem:testdb
-    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: true # H2 웹 콘솔 사용 허용
-      path: /h2-console # 콘솔 접속 경로 (기본값)
   thymeleaf:
-    cache: false # 템플릿 캐시 끄기 (개발용)
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${EMAIL_ID}
-    password: ${EMAIL_PW}
-    properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
+    cache: false # 개발 시 템플릿 캐시 끄기 (운영에서는 보통 true)
   servlet:
     multipart:
       enabled: true
       max-file-size: 10MB
       max-request-size: 100MB
+
 app:
-  base-url: http://localhost:3000 # 애플리케이션 기본 URL (비밀번호 재설정 링크 생성용)
+  base-url: http://localhost:3000 # 비밀번호 재설정 링크 등에 사용될 애플리케이션 기본 URL
+
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.akmz.springBase
   configuration:
     mapUnderscoreToCamelCase: true
-pagehelper:
-  helperDialect: h2
-  reasonable: true
-  supportMethodsArguments: true
-  params: count=countSql
+
+# JWT 관련 설정 (프로파일별로 오버라이드 가능)
 jwt:
   secret: ${JWT_SECRET_KEY}
-#  expiration: 300000 # 5분 (토큰은 5분 남으면 갱신시도 하므로 체크용)
-  expiration: 3600000 # 1시간 (60(분)×60(초)×1000(밀리초)=3,600,000밀리초)
-  refresh-expiration: 604800000 # refreshToken: 7일 (ms 단위)
+  expiration: 3600000 # 1시간
+  refresh-expiration: 604800000 # 7일
 
+# FTP 관련 설정
 ftp:
   host: ${FTP_HOST}
   port: ${FTP_PORT}
   username: ${FTP_USERNAME}
   password: ${FTP_PASSWORD}
-  remote-base-dir: ${FTP_REMOTE_BASE_DIR:/} # 기본값은 /
+  remote-base-dir: ${FTP_REMOTE_BASE_DIR:/}
 
-logging:
-  config: classpath:config/log/log4j2.yml
-
-debug:
-  include-exception-details: true   # 익셉션 메시지에 상세 로그 추가여부
-
+# 이메일 관련 설정
+spring.mail:
+  host: smtp.gmail.com
+  port: 587
+  username: ${EMAIL_ID}
+  password: ${EMAIL_PW}
+  properties:
+    mail.smtp.auth: true
+    mail.smtp.starttls.enable: true

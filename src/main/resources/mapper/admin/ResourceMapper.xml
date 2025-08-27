@@ -48,13 +48,16 @@
         WHERE RESOURCE_PATTERN = #{resourcePattern}
     </select>
 
-    <insert id="insertResource" useGeneratedKeys="true" keyProperty="resourceId">
+    <insert id="insertResource" keyProperty="resourceId">
+        <selectKey keyProperty="resourceId" resultType="long" order="BEFORE">
+            SELECT resources_seq.NEXTVAL FROM DUAL
+        </selectKey>
         INSERT INTO RESOURCES (
-            RESOURCE_TYPE, RESOURCE_PATTERN, HTTP_METHOD, DESCRIPTION,
+            RESOURCE_ID, RESOURCE_TYPE, RESOURCE_PATTERN, HTTP_METHOD, DESCRIPTION,
             MENU_NAME, MENU_URL, ICON_NAME, PARENT_RESOURCE_ID, DISPLAY_ORDER, IS_GROUP, USE_YN
         )
         VALUES (
-            #{resourceType}, #{resourcePattern}, #{httpMethod}, #{description},
+            #{resourceId}, #{resourceType}, #{resourcePattern}, #{httpMethod}, #{description},
             #{menuName}, #{menuUrl}, #{iconName}, #{parentResourceId}, #{displayOrder}, #{isGroup}, #{useYn}
         )
     </insert>

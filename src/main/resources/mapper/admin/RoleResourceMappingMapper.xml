@@ -20,9 +20,12 @@
         WHERE RESOURCE_ID = #{resourceId}
     </select>
 
-    <insert id="insertMapping" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO ROLE_RESOURCE_MAPPINGS (ROLE_ID, RESOURCE_ID)
-        VALUES (#{roleId}, #{resourceId})
+    <insert id="insertMapping" keyProperty="id">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            SELECT role_resource_mappings_seq.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO ROLE_RESOURCE_MAPPINGS (ID, ROLE_ID, RESOURCE_ID)
+        VALUES (#{id}, #{roleId}, #{resourceId})
     </insert>
 
     <delete id="deleteMapping">

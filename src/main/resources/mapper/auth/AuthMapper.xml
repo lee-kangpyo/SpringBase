@@ -55,7 +55,7 @@
         -- 로그인 실패 시 호출: 실패 횟수 증가 및 마지막 실패 시각 업데이트
         UPDATE <include refid="BASE.userTable"/>
         SET LOGIN_FAILURE_COUNT = LOGIN_FAILURE_COUNT + 1,
-        LAST_FAILURE_TIMESTAMP = NOW()
+        LAST_FAILURE_TIMESTAMP = SYSDATE
         <include refid="whereCondition" />
     </update>
 

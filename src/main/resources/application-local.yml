@@ -1,0 +1,44 @@
+# 'local' 프로파일 전용 설정
+spring:
+  datasource:
+    # SQL 로깅을 위한 log4jdbc 사용, H2 인메모리 DB (Oracle 호환 모드)
+    url: jdbc:log4jdbc:h2:mem:testdb;MODE=Oracle;DB_CLOSE_DELAY=-1
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true # H2 웹 콘솔 사용
+      path: /h2-console # H2 콘솔 접속 경로
+  sql:
+    init:
+      # 애플리케이션 시작 시 항상 schema.sql, data.sql 실행
+      mode: always
+  jpa:
+    show-sql: true # 실행되는 SQL 쿼리를 로그에 표시
+    hibernate:
+      # schema.sql로 스키마를 정의하므로 하이버네이트는 스키마를 변경하지 않고 검증만 함
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # JPA를 위한 H2 방언 설정
+        dialect: org.hibernate.dialect.H2Dialect
+
+# PageHelper 페이징 라이브러리 H2용 설정
+pagehelper:
+  helperDialect: h2
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql
+
+# 로컬 개발용 로깅 설정
+logging:
+  config: classpath:config/log/log4j2.yml
+
+# 로컬 개발 시 디버깅을 위해 상세한 예외 메시지 포함
+debug:
+  include-exception-details: true
+
+app:
+  cookie:
+    secure: false # 로컬 http 환경용 쿠키 설정

@@ -42,8 +42,8 @@ public class AuthController {
     @Value("${jwt.refresh-expiration}")
     private int refreshExpiration;
 
-    @Value("${spring.profiles.active}")
-    private String MODE;
+    @Value("${app.cookie.secure:false}")
+    private boolean isCookieSecure;
 
     @PostMapping("/login")
     @Operation(
@@ -63,7 +63,7 @@ public class AuthController {
                 TokenResponse tokenResponse = authService.login(request);
                 ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
                         .httpOnly(true)
-                        .secure("PROD".equals(MODE))
+                        .secure(isCookieSecure)
                         .maxAge(refreshExpiration / 1000)
                         .sameSite("Lax")
                         .path("/")
@@ -138,7 +138,7 @@ public class AuthController {
 
             ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
                     .httpOnly(true)
-                    .secure("PROD".equals(MODE))
+                    .secure(isCookieSecure)
                     .maxAge(refreshExpiration / 1000)
                     .sameSite("Lax")
                     .path("/")
@@ -172,7 +172,7 @@ public class AuthController {
 
             ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
                     .httpOnly(true)
-                    .secure("PROD".equals(MODE))
+                    .secure(isCookieSecure)
                     .maxAge(refreshExpiration / 1000)
                     .sameSite("Lax")
                     .path("/")
@@ -220,7 +220,7 @@ public class AuthController {
             TokenResponse tokenResponse = authService.refreshAccessToken(refreshToken);
             ResponseCookie token = ResponseCookie.from("X-Refresh-Token", tokenResponse.getRefreshToken())
                     .httpOnly(true)
-                    .secure("PROD".equals(MODE))
+                    .secure(isCookieSecure)
                     .maxAge(refreshExpiration / 1000)
                     .sameSite("Lax")
                     .path("/")

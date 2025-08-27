@@ -14,9 +14,12 @@
         WHERE USER_NAME = #{userName}
     </select>
 
-    <insert id="insertUserRole" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO USER_ROLES (USER_NAME, ROLE_ID)
-        VALUES (#{userName}, #{roleId})
+    <insert id="insertUserRole" keyProperty="id">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            SELECT user_roles_seq.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO USER_ROLES (ID, USER_NAME, ROLE_ID)
+        VALUES (#{id}, #{userName}, #{roleId})
     </insert>
 
     <delete id="deleteUserRole">

@@ -25,9 +25,12 @@
         WHERE ROLE_NAME = #{roleName}
     </select>
 
-    <insert id="insertRole" useGeneratedKeys="true" keyProperty="roleId">
-        INSERT INTO ROLES (ROLE_NAME, DESCRIPTION)
-        VALUES (#{roleName}, #{description})
+    <insert id="insertRole" keyProperty="roleId">
+        <selectKey keyProperty="roleId" resultType="long" order="BEFORE">
+            SELECT roles_seq.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO ROLES (ROLE_ID, ROLE_NAME, DESCRIPTION)
+        VALUES (#{roleId}, #{roleName}, #{description})
     </insert>
 
     <update id="updateRole">

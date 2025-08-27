@@ -17,6 +17,11 @@ public class SpringBaseApplication {
 			System.setProperty(entry.getKey(), entry.getValue());
 		});
 
+//		System.out.println("====================================================");
+//		System.out.println("Default Charset: " + java.nio.charset.Charset.defaultCharset());
+//		System.out.println("file.encoding System Property: " + System.getProperty("file.encoding"));
+//		System.out.println("====================================================");
+
 		SpringApplication.run(SpringBaseApplication.class, args);
 	}
 
